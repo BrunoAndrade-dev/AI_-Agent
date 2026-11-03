@@ -12,8 +12,8 @@ Antes de compartilhar a API por túnel HTTPS, implementar identificação da ses
 limites de requisições e configuração própria de exposição. Não expor o servidor
 de desenvolvimento ou a porta do Ollama como serviço público.
 
-A imagem Ollama usa `latest` provisoriamente. Fixar uma versão/digest após a
-validação do runtime. As dependências Python são fixadas em
+A imagem Ollama está fixada por digest (0.40.13). Somente o runtime foi validado;
+a geração depende do download do modelo. As dependências Python são fixadas em
 `backend/requirements.lock.txt`.
 
 Em ambientes com proxy TLS corporativo, o Dockerfile do backend aceita o segredo

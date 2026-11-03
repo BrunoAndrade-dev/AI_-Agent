@@ -2,9 +2,11 @@
 
 Protótipo de atendimento para uma loja fictícia de instrumentos musicais.
 
-**Status:** modelos de catálogo, clientes e pedidos, migrations e importação CSV
-implementados. O agente, a sessão demonstrativa e o chat ainda não foram
-implementados. Nenhuma integração com LLM é simulada como funcional.
+**Status:** camada de dados, ferramentas, índice de políticas e orquestração do
+agente por CLI implementados. A geração real está pendente de validação com Docker
+na máquina do desenvolvedor após bloqueios de rede e quedas do ambiente na nuvem.
+Sessão web e interface de chat ainda não foram
+implementadas. Nenhuma integração com LLM é simulada como funcional.
 
 ## Stack
 
@@ -12,7 +14,7 @@ implementados. Nenhuma integração com LLM é simulada como funcional.
 - Documentação: OpenAPI e Swagger UI com drf-spectacular.
 - Frontend: Next.js, React e TypeScript.
 - Banco: PostgreSQL 17, gerenciado por migrations Django.
-- Inferência: Ollama, com modelo ainda a selecionar e validar.
+- Inferência: Ollama local; candidato `qwen3:4b`, ainda sem validação de geração.
 - Execução local: Docker Compose.
 
 ## Estrutura
@@ -24,7 +26,7 @@ db/               Orientações de persistência
 ollama/           Orientações para o runtime e modelos
 docker/           Dockerfiles e orientações dos containers
 data/private/     Arquivos originais, ignorados pelo Git
-data/synthetic/   Fixtures públicas a implementar
+data/synthetic/   CSVs e PDF sintéticos para reprodução pública
 docs/             Arquitetura e decisões compartilháveis
 scripts/          Automação auxiliar
 ```
@@ -49,8 +51,9 @@ O frontend usa a porta local 3000; o backend, 8000. Rotas da API:
 - `GET /api/schema/`: esquema OpenAPI.
 - `GET /api/docs/`: Swagger UI.
 
-Ollama inicia sem modelo baixado. Consulte `ollama/README.md` antes de configurar
-`OLLAMA_MODEL`. Não será possível conversar com um agente nesta etapa.
+Ollama inicia sem modelo baixado. Consulte `docs/agent.md` para importar o PDF,
+baixar o modelo e usar o CLI. Conversas exigem download e configuração do modelo.
+A validação com modelo real será realizada localmente com Docker.
 
 Para parar: `docker compose down`. Os volumes são preservados. Não usar `down -v`
 se desejar manter banco e modelos.
