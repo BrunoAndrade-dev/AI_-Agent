@@ -1,0 +1,48 @@
+# Local configuration and credentials
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Private project context and original challenge data
+context.md
+data/private/*
+!data/private/.gitkeep
+!data/private/README.md
+**/customers.csv
+**/* - customers.csv
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+*.egg-info/
+backend/staticfiles/
+backend/media/
+*.sqlite3
+
+# Frontend
+node_modules/
+.next/
+out/
+coverage/
+*.tsbuildinfo
+next-env.d.ts
+
+# Runtime state: use named Docker volumes
+*.log
+.runtime/
+db/storage/
+ollama/models/
+
+# Editors and operating systems
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
