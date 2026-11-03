@@ -2,26 +2,60 @@
 
 ## Estado de validação
 
-Consultas, índice do PDF e loop de ferramentas implementados. Testes de protocolo
-usam doubles explícitos do modelo. Qualidade das respostas reais, latência e
-hardware mínimo **ainda não foram validados**. Houve bloqueios de rede no download
-de `qwen3:4b` e, após a liberação dos destinos, quedas do ambiente na nuvem durante
-novas tentativas. A validação será retomada na máquina do desenvolvedor com Docker.
-Não há fallback de respostas fictícias.
+Em 03/11/2026, a validação inicial com `qwen3:1.7b` e a base sintética
+**reprovou a configuração anterior para atendimento**: dez turnos naturais sem
+ferramentas, incluindo preços e endereço inventados. Uma instrução explícita
+conseguiu executar busca real, mas a continuidade não renovou as consultas.
+Os 60 testes automatizados passaram novamente. Evidências, tempos e transcrições:
+[relatório local](validation/2026-11-03-qwen3-1.7b/report.md).
+O `.env` e os volumes foram preservados; o modelo padrão versionado não mudou.
+
+As correções posteriores separam decisão estruturada e redação, validam filtros
+contra o catálogo/contexto e rejeitam respostas factuais sem consulta válida.
+Foram aprovados 87 testes automatizados. Rodadas reais, falhas remanescentes e
+limites estão no [relatório de correções](validation/2026-11-03-agent-corrections/report.md).
+O modelo ainda exige revisão de qualidade; esses testes não o aprovam para produção.
 
 O servidor Ollama 0.40.13 responde a `/api/version` e `/api/tags` na rede interna.
 A imagem está fixada por digest, com cloud desativado. Healthcheck não comprova
 presença do modelo. API pública de chat e sessão web pertencem à próxima etapa.
 
-Validações realizadas: 60 testes aprovados no backend Docker com PostgreSQL,
+Validações anteriores: 60 testes aprovados no backend Docker com PostgreSQL,
 incluindo parsing real do PDF sintético; seis verificações de retrieval no manual
 original; lint e formatação aprovados; nenhuma migration pendente. Os testes do
 loop com doubles não demonstram qualidade de geração ou resistência real do LLM.
 
 ## Arquitetura e escolhas
 
-O modelo escolhe ferramentas com schemas JSON estritos. Consultas usam ORM, sem
-SQL ou comandos gerados. Preços usam Decimal e arredondamento comercial.
+Cada turno começa com uma decisão do modelo restringida por JSON Schema no
+campo `format` do Ollama: nome/argumentos de uma ferramenta ou uma intenção simples
+de saudação, esclarecimento ou fora de escopo. Essas intenções usam textos fixos,
+sem alegações operacionais. Não há fallback que simule uma consulta bem-sucedida.
+
+As categorias permitidas vêm do banco. `max_price` só admite números presentes
+nas mensagens do cliente, nunca valores inventados pelo assistente. Isso limita
+defaults alucinados, mas não prova que cada número representa um orçamento. Valores
+por extenso podem exigir esclarecimento. Schemas continuam validados pelo Python,
+inclusive nas chamadas nativas adicionais após uma consulta. `get_product` só
+aceita IDs explicitamente citados pelo cliente ou retornados em consultas anteriores.
+A sessão mantém até oito referências ID/nome, sem guardar preços ou estoque antigos.
+
+O modelo redige após receber os dados e pode pedir consultas adicionais pelo
+protocolo nativo. Consultas usam ORM, sem SQL gerado. Preços usam Decimal e
+arredondamento comercial. Uma verificação parcial bloqueia valores explicitamente
+marcados com R$ que não estejam nos preços/trechos consultados. Ela não verifica
+toda a semântica nem a associação de um preço ao produto ou meio de pagamento.
+
+Sem evidência válida no turno, a prosa factual é rejeitada; chamadas com erro não
+contam como evidência. Há até quatro rodadas/oito chamadas, incluindo correções.
+Falha de confirmação retorna `unverified_response`, sem salvar o texto rejeitado
+no histórico. `validation_errors` registra rejeições; `tools_used` preserva tentativas
+mesmo em falhas. Negativas de pedido são formuladas pelo código, sem confirmar
+existência fora da sessão. Resumos exclusivamente de pedidos são formatados a partir
+do snapshot, sem transformar estimativa em recebimento real. Perguntas explícitas
+sobre devolução/arrependimento exigem política e recebem os trechos do manual mais
+uma confirmação de canal e recebimento; não há cálculo de elegibilidade nem aprovação.
+Referências do PDF são anexadas ao texto pelo backend.
 
 Para oito páginas, busca lexical com acentos normalizados, sinônimos explícitos,
 ranking do tipo BM25 e peso de seção evita outro modelo e infraestrutura vetorial.
@@ -77,13 +111,14 @@ locais não são enviados ao modelo, somente nomes e metadados da fonte.
 
 ## Modelo e configuração
 
-`qwen3:4b` é candidato por suportar ferramentas e execução local. Não foi ainda
-aprovado por qualidade ou hardware. A avaliação real deve medir português,
-seleção de ferramentas, aplicação das políticas, instruções adversas e latência.
+As rodadas locais usam `qwen3:1.7b`, configurado no `.env` do desenvolvedor.
+O `.env.example` ainda contém o candidato anterior `qwen3:4b`; nenhum modelo foi
+aprovado definitivamente. Para reproduzir a avaliação abaixo, configure explicitamente
+`OLLAMA_MODEL=qwen3:1.7b` no ambiente local. Não é necessário baixar outro modelo.
 
 ```sh
 docker compose up -d --wait db ollama
-docker compose exec -e OLLAMA_HOST=http://127.0.0.1:11434 ollama ollama pull qwen3:4b
+docker compose exec -e OLLAMA_HOST=http://127.0.0.1:11434 ollama ollama list
 docker compose run --rm --no-deps backend python manage.py chat_store --check-model
 ```
 
@@ -91,6 +126,7 @@ Loopback explícito no CLI evita encaminhar `0.0.0.0` ao proxy. Não desabilitar
 TLS. Configure `OLLAMA_MODEL` e `OLLAMA_TIMEOUT_SECONDS` no `.env`. O Compose
 fixa `OLLAMA_BASE_URL` na rede interna. Não usar modelos `:cloud`.
 O timeout padrão é 120 segundos por chamada, não por conversa inteira.
+Se o modelo realmente faltar, seu download deve ser uma etapa explícita.
 
 Em redes restritas, o download utiliza `registry.ollama.ai`, `registry.ollama.com`
 e o armazenamento de blobs indicado pelo registro. Neste ambiente, foi observado
@@ -125,3 +161,18 @@ Textos recuperados são tratados como dados. O agente não possui ferramentas pa
 comprar, pagar, devolver, cancelar ou registrar reclamação. Lacunas e conflitos
 exigem esclarecimento. Antes do túnel público, implementar sessão, limites de
 requisição e servidor apropriado. Não expor banco, Ollama ou CLI ao navegador.
+
+## Reproduzir a regressão com o modelo real
+
+Com `qwen3:1.7b`, banco sintético já preparado e PDF sintético indexado:
+
+```sh
+docker compose run --rm --no-deps -T backend python manage.py shell < scripts/validate_agent.py
+```
+
+O script verifica modelo, IDs/nomes do catálogo sintético e checksum do manual
+antes de executar sete cenários/dez turnos. Não importa dados nem modifica a loja.
+Cada linha JSON registra pergunta, resposta efetiva, status, ferramentas, rejeições,
+mensagens brutas do modelo e duração. O Django pode imprimir um cabeçalho antes do JSON.
+As mensagens brutas podem conter respostas rejeitadas; não são o texto entregue ao cliente.
+Isso é uma avaliação conhecida e pequena, não uma prova de qualidade geral do modelo.

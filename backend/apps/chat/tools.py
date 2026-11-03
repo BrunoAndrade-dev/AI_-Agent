@@ -1,11 +1,15 @@
 """Allowlisted agent capabilities with strict schemas and trusted identity binding."""
 
 import json
+import re
+from copy import deepcopy
 from dataclasses import dataclass
 
 from jsonschema import ValidationError, validate
 
+from apps.catalog.models import Category
 from apps.catalog.services import get_product, search_products
+from apps.chat.grounding import monetary_values
 from apps.knowledge.services import search_policies
 from apps.orders.services import get_order
 
@@ -45,7 +49,13 @@ TOOLS = [
         {
             "query": TEXT,
             "category": TEXT,
-            "max_price": {"type": "number", "minimum": 0, "maximum": 1000000},
+            "max_price": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1000000,
+                "description": "Teto informado pelo cliente. OMITA se não houver orçamento; "
+                "nunca invente um valor padrão.",
+            },
             "available_only": {"type": "boolean"},
             "limit": {"type": "integer", "minimum": 1, "maximum": 16},
         },
@@ -78,14 +88,79 @@ TOOLS = [
 SCHEMAS = {item["function"]["name"]: item["function"]["parameters"] for item in TOOLS}
 
 
-def execute_tool(name: str, arguments: dict, context: AgentContext) -> dict:
+def available_tools(
+    *, messages: list[dict] | None = None, product_references: dict[int, str] | None = None
+) -> list[dict]:
+    """Bind taxonomy and numeric filter candidates to real data and user context.
+
+    Numeric provenance limits invented defaults; it does not prove that a number
+    mentioned by a customer is a budget. The planner must still interpret intent.
+    """
+    tools = deepcopy(TOOLS)
+    categories = list(Category.objects.order_by("id").values_list("name", flat=True))
+    properties = tools[0]["function"]["parameters"]["properties"]
+    # TEXT is reused by query/category: deepcopy preserves that alias, so replace
+    # category instead of mutating it and accidentally constraining the name query.
+    category_schema = {
+        **properties["category"],
+        "description": "Categoria real do catálogo; omita se não souber.",
+    }
+    properties["category"] = category_schema
+    if categories:
+        category_schema["enum"] = categories
+    if messages is not None:
+        amounts = set()
+        product_ids = set(product_references or {})
+        for message in messages:
+            if message["role"] == "user":
+                product_ids.update(
+                    int(identifier)
+                    for identifier in re.findall(
+                        r"\b(?:produto|id|instrumento)\s*[:#]?\s*(\d+)\b",
+                        message["content"],
+                        re.IGNORECASE,
+                    )
+                    if 1 <= int(identifier) <= 2147483647
+                )
+                for token in re.findall(r"(?<!\w)\d+(?:\.\d+)*(?:,\d+)?(?!\w)", message["content"]):
+                    amounts.update(monetary_values("R$ " + token))
+        candidates = sorted(float(amount) for amount in amounts if 0 <= amount <= 1000000)
+        if candidates:
+            properties["max_price"]["enum"] = candidates
+        else:
+            del properties["max_price"]
+        if product_ids:
+            tools[1]["function"]["parameters"]["properties"]["product_id"] = {
+                **IDENTIFIER,
+                "enum": sorted(product_ids),
+            }
+            if product_references:
+                tools[1]["function"]["description"] += " Identificações já consultadas: " + (
+                    json.dumps(product_references, ensure_ascii=False)
+                )
+        else:
+            tools.pop(1)
+    return tools
+
+
+def execute_tool(
+    name: str, arguments: dict, context: AgentContext, *, definitions: list[dict] | None = None
+) -> dict:
     """Reject unknown capabilities and malformed arguments before any database read."""
-    if name not in SCHEMAS:
+    if name not in SCHEMAS or (
+        definitions is not None
+        and not any(item["function"]["name"] == name for item in definitions)
+    ):
         return {"error": "unknown_tool"}
     try:
         # Reject non-JSON values, NaN and infinity before JSON Schema validation.
         json.dumps(arguments, allow_nan=False)
-        validate(arguments, SCHEMAS[name])
+        schemas = (
+            {item["function"]["name"]: item["function"]["parameters"] for item in definitions}
+            if definitions is not None
+            else SCHEMAS
+        )
+        validate(arguments, schemas[name])
     except (ValidationError, ValueError, TypeError):
         return {"error": "invalid_arguments"}
     if name == "search_products":

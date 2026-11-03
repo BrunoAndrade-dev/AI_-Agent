@@ -3,8 +3,9 @@
 Protótipo de atendimento para uma loja fictícia de instrumentos musicais.
 
 **Status:** camada de dados, ferramentas, índice de políticas e orquestração do
-agente por CLI implementados. A geração real está pendente de validação com Docker
-na máquina do desenvolvedor após bloqueios de rede e quedas do ambiente na nuvem.
+agente por CLI implementados. A validação local com `qwen3:1.7b` identificou falhas
+de consulta e fidelidade; foram implementadas correções e proteções, ainda sem
+aprovação definitiva do modelo. Veja `docs/agent.md` e os relatórios em `docs/validation`.
 Sessão web e interface de chat ainda não foram
 implementadas. Nenhuma integração com LLM é simulada como funcional.
 
@@ -14,7 +15,8 @@ implementadas. Nenhuma integração com LLM é simulada como funcional.
 - Documentação: OpenAPI e Swagger UI com drf-spectacular.
 - Frontend: Next.js, React e TypeScript.
 - Banco: PostgreSQL 17, gerenciado por migrations Django.
-- Inferência: Ollama local; candidato `qwen3:4b`, ainda sem validação de geração.
+- Inferência: Ollama local; `qwen3:1.7b` em avaliação. O `.env.example` mantém
+  o candidato anterior `qwen3:4b`; configure o modelo instalado no ambiente local.
 - Execução local: Docker Compose.
 
 ## Estrutura
@@ -53,18 +55,21 @@ O frontend usa a porta local 3000; o backend, 8000. Rotas da API:
 
 Ollama inicia sem modelo baixado. Consulte `docs/agent.md` para importar o PDF,
 baixar o modelo e usar o CLI. Conversas exigem download e configuração do modelo.
-A validação com modelo real será realizada localmente com Docker.
+A validação com modelo real é executada localmente com Docker e dados sintéticos.
 
 Para parar: `docker compose down`. Os volumes são preservados. Não usar `down -v`
 se desejar manter banco e modelos.
 
 ## Dados e decisões
 
-Não versionar os CSVs de clientes, arquivos originais, credenciais, banco ou
-pesos do modelo. Há fixtures inteiramente sintéticas em `data/synthetic`.
-Use bancos separados para originais e exemplos: os IDs de origem podem coincidir.
-Veja `docs/data-import.md` para validação, reimportação e limitações, e
-`docs/architecture.md` para responsabilidades e políticas de interpretação.
+Optei por manter os CSVs originais de clientes, os demais arquivos originais,
+as credenciais, o banco e os pesos do modelo fora do versionamento. Para permitir
+a reprodução pública do projeto, disponibilizo fixtures inteiramente sintéticas
+em `data/synthetic`.
+Mantenho os dados originais e os exemplos em bancos separados, pois os IDs de
+origem podem coincidir. Documento a validação, a reimportação e as limitações em
+`docs/data-import.md`, e as responsabilidades e políticas de interpretação em
+`docs/architecture.md`.
 
 ## Validação do backend
 
@@ -84,10 +89,9 @@ deliberada, reexecutando os testes.
 
 ## Desenvolvimento e entrega
 
-Trabalho em `develop`; commits somente após revisão e autorização do responsável.
-As branches `main` e `develop` já existem. Merge para `main` e publicação só
-ocorrem mediante orientação do responsável. Não alterar a entrega após o prazo
-do processo.
+Trabalho na branch `develop` e reviso e autorizo os commits antes de realizá-los.
+Mantenho a branch `main` para a entrega e decido quando fazer o merge e a
+publicação. Após o prazo do processo seletivo, não faço alterações na entrega.
 
 ## Uso de IA
 

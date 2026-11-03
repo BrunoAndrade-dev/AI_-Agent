@@ -28,6 +28,7 @@ services:
       retries: 10
 
   backend:
+    image: emporio-musica-backend:local
     build:
       context: .
       dockerfile: docker/backend/Dockerfile
@@ -54,6 +55,7 @@ services:
       retries: 10
 
   frontend:
+    image: emporio-musica-frontend:local
     build:
       context: .
       dockerfile: docker/frontend/Dockerfile

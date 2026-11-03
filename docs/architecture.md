@@ -28,7 +28,8 @@ Fixtures CSV e PDF sintéticos já estão disponíveis para reprodução públic
 
 As ferramentas possuem schemas JSON estritos. O retrieval do PDF é lexical,
 com referência de página e seção. O loop Ollama limita rodadas e contexto.
-Veja `docs/agent.md` para decisões e a pendência de validação com modelo real.
+Veja `docs/agent.md` para decisão estruturada, verificações de evidência e
+resultados/limites da validação local com o modelo real.
 
 ## Políticas e suposições
 

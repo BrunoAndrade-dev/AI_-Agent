@@ -6,9 +6,16 @@ from dataclasses import dataclass, field
 from django.db import DatabaseError
 from django.utils import timezone
 
-from apps.chat.ollama import ModelUnavailable, OllamaClient
-from apps.chat.prompts import SYSTEM_PROMPT
-from apps.chat.tools import TOOLS, AgentContext, execute_tool
+from apps.chat.grounding import grounding_error
+from apps.chat.ollama import InvalidModelResponse, ModelUnavailable, OllamaClient
+from apps.chat.prompts import REPAIR_PRICE, REQUIRE_TOOL, SYSTEM_PROMPT
+from apps.chat.responses import (
+    asks_about_returns,
+    order_snapshot_reply,
+    return_guidance,
+    scoped_order_reply,
+)
+from apps.chat.tools import AgentContext, available_tools, execute_tool
 
 
 @dataclass
@@ -19,6 +26,7 @@ class AgentReply:
     status: str = "ok"
     sources: list[dict] = field(default_factory=list)
     tools_used: list[str] = field(default_factory=list)
+    validation_errors: list[str] = field(default_factory=list)
 
 
 class StoreAgent:
@@ -28,6 +36,7 @@ class StoreAgent:
         self.context = context or AgentContext()
         self.client = client or OllamaClient()
         self.history: list[dict] = []
+        self.product_references: dict[int, str] = {}
 
     def reply(self, text: str) -> AgentReply:
         """Handle one message with a maximum of four model rounds/eight tool calls.
@@ -51,16 +60,72 @@ class StoreAgent:
         ]
         sources = []
         tools_used = []
+        results = []
+        policy_passages = []
+        validation_errors = []
+
+        def outcome(answer: str, status: str = "ok") -> AgentReply:
+            return AgentReply(answer, status, sources, tools_used, validation_errors)
+
         try:
             for _ in range(4):
-                message = self.client.chat(messages, TOOLS)
-                calls = message.get("tool_calls", [])
-                if not isinstance(calls, list):
-                    raise ModelUnavailable("Malformed tool calls.")
+                tools = available_tools(
+                    messages=messages, product_references=self.product_references
+                )
+                try:
+                    message = self.client.chat(messages, tools, select_tool=not results)
+                    calls = message.get("tool_calls", [])
+                    if not isinstance(calls, list):
+                        raise InvalidModelResponse("Malformed tool calls.")
+                    for call in calls:
+                        function = call.get("function") if isinstance(call, dict) else None
+                        if (
+                            not isinstance(function, dict)
+                            or not isinstance(function.get("name"), str)
+                            or not isinstance(function.get("arguments"), dict)
+                        ):
+                            raise InvalidModelResponse("Malformed tool arguments.")
+                    if not calls and (
+                        not isinstance(message.get("content"), str)
+                        or not message["content"].strip()
+                        or len(message["content"]) > 12000
+                    ):
+                        raise InvalidModelResponse("Invalid answer.")
+                except InvalidModelResponse:
+                    validation_errors.append("invalid_model_response")
+                    messages[0]["content"] += "\n" + REQUIRE_TOOL
+                    continue
                 if not calls:
-                    answer = message.get("content", "")
-                    if not isinstance(answer, str) or not answer.strip() or len(answer) > 12000:
-                        raise ModelUnavailable("Invalid answer.")
+                    # Authorization denials are phrased by code, not inferred by the model.
+                    answer = (
+                        scoped_order_reply(results)
+                        or order_snapshot_reply(results)
+                        or message.get("content", "")
+                    )
+                    if asks_about_returns(text) and policy_passages:
+                        answer = return_guidance(policy_passages)
+                    error = (
+                        "missing_policy_evidence"
+                        if asks_about_returns(text) and not policy_passages
+                        else grounding_error(answer, results)
+                    )
+                    if error:
+                        validation_errors.append(error)
+                        # Never feed rejected factual prose back as conversation evidence.
+                        messages[0]["content"] += "\n" + (
+                            REPAIR_PRICE
+                            if error == "unsupported_price"
+                            else "Execute search_policies para consultar a política de devolução."
+                            if error == "missing_policy_evidence"
+                            else REQUIRE_TOOL
+                        )
+                        continue
+                    if sources:
+                        references = "; ".join(
+                            f"{source['source']} — {source['section']}, p. {source['page']}"
+                            for source in sources
+                        )
+                        answer += "\n\nFontes consultadas: " + references + "."
                     self.history.extend(
                         [
                             {"role": "user", "content": text},
@@ -68,21 +133,34 @@ class StoreAgent:
                         ]
                     )
                     self.history = self.history[-8:]
-                    return AgentReply(answer, sources=sources, tools_used=tools_used)
+                    return outcome(answer)
                 if len(tools_used) + len(calls) > 8:
                     break
-                messages.append(message)
+                # The installed Qwen template serializes Content OR ToolCalls.
+                # Discard any preamble so the tool calls survive the next request.
+                messages.append({**message, "content": ""})
                 for call in calls:
-                    function = call.get("function", {}) if isinstance(call, dict) else {}
-                    if not isinstance(function, dict):
-                        raise ModelUnavailable("Malformed tool call.")
-                    name = function.get("name")
-                    arguments = function.get("arguments", {})
-                    if not isinstance(name, str) or not isinstance(arguments, dict):
-                        raise ModelUnavailable("Malformed tool arguments.")
-                    result = execute_tool(name, arguments, self.context)
+                    function = call["function"]
+                    name = function["name"]
+                    arguments = function["arguments"]
+                    result = execute_tool(name, arguments, self.context, definitions=tools)
                     tools_used.append(name)
+                    if "error" in result:
+                        validation_errors.append(result["error"])
+                    else:
+                        results.append(result)
+                        products = result.get("products", [])
+                        if result.get("product"):
+                            products = [*products, result["product"]]
+                        for product in products:
+                            identifier = product["id"]
+                            self.product_references.pop(identifier, None)
+                            self.product_references[identifier] = product["name"]
+                        # Retain identities, not stale prices/stock, with a fixed memory bound.
+                        self.product_references = dict(list(self.product_references.items())[-8:])
                     for source in result.get("sources", []):
+                        if source not in policy_passages:
+                            policy_passages.append(source)
                         reference = {k: v for k, v in source.items() if k != "text"}
                         if reference not in sources:
                             sources.append(reference)
@@ -94,23 +172,29 @@ class StoreAgent:
                         }
                     )
                     if sum(len(item.get("content", "")) for item in messages) > 16000:
-                        return AgentReply(
+                        return outcome(
                             "A consulta ficou extensa. "
                             "Pode restringir a busca ou fazer uma pergunta por vez?",
                             "context_limit",
                         )
         except ModelUnavailable:
-            return AgentReply(
+            return outcome(
                 "O modelo local está indisponível no momento. Tente novamente em instantes.",
                 "model_unavailable",
             )
         except DatabaseError:
-            return AgentReply(
+            return outcome(
                 "Não consegui consultar as informações da loja agora. "
                 "Tente novamente em instantes.",
                 "data_unavailable",
             )
-        return AgentReply(
+        if validation_errors:
+            return outcome(
+                "Não consegui confirmar uma resposta nas fontes da loja. "
+                "Pode reformular sua pergunta?",
+                "unverified_response",
+            )
+        return outcome(
             "Não consegui concluir essa consulta com segurança. Pode reformular sua pergunta?",
             "tool_limit",
         )
