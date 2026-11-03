@@ -12,6 +12,7 @@ data/private/*
 !data/private/README.md
 **/customers.csv
 **/* - customers.csv
+!data/synthetic/customers.csv
 
 # Python
 __pycache__/
