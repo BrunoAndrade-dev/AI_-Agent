@@ -13,4 +13,10 @@ limites de requisições e configuração própria de exposição. Não expor o 
 de desenvolvimento ou a porta do Ollama como serviço público.
 
 A imagem Ollama usa `latest` provisoriamente. Fixar uma versão/digest após a
-validação do runtime. O lockfile Python será definido na etapa de dependências.
+validação do runtime. As dependências Python são fixadas em
+`backend/requirements.lock.txt`.
+
+Em ambientes com proxy TLS corporativo, o Dockerfile do backend aceita o segredo
+BuildKit opcional `proxy_ca`, apontando para um bundle confiável de certificados.
+Ele é usado apenas durante a instalação, sem persistir na imagem. Não desabilitar
+a validação TLS. O desenvolvimento local sem proxy dispensa esse segredo.

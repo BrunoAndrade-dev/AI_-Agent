@@ -1,0 +1,6 @@
+product_id,price_brl,name,category_id,description,stock_quantity,status,specs,created_at
+1,1000,Violão Exemplo Nylon,1,Produto inteiramente sintético,5,active,"{""strings"": ""nylon"", ""electronics"": ""no"", ""color"": ""Natural""}",2025-01-01
+2,600,Violão Exemplo Esgotado,1,Produto inteiramente sintético,0,active,"{""strings"": ""nylon"", ""electronics"": ""no"", ""color"": ""Natural""}",2025-01-01
+3,500,Violão Exemplo Descontinuado,1,Produto inteiramente sintético,3,discontinued,"{""strings"": ""nylon"", ""electronics"": ""no"", ""color"": ""Natural""}",2025-01-01
+4,700,Ukulele Exemplo Em Breve,2,Produto inteiramente sintético,2,coming_soon,"{""strings"": ""nylon"", ""electronics"": ""no"", ""color"": ""Natural""}",2025-01-01
+5,400,Ukulele Exemplo Concert,2,Produto inteiramente sintético,4,active,"{""strings"": ""nylon"", ""electronics"": ""no"", ""color"": ""Natural""}",2025-01-01
