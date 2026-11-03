@@ -67,8 +67,11 @@ serão feitos pelo responsável. Não alterar a entrega após o prazo do process
 
 ## Uso de IA
 
-OpenAI Codex está sendo usado na discussão de arquitetura, análise dos dados e
-criação assistida da estrutura. As decisões são alinhadas com o candidato.
-Esta seção será atualizada para refletir implementação e validações efetivamente
-realizadas. Limitações, conversas demonstrativas e instruções finais serão
-consolidadas nas próximas etapas.
+Sou responsável pelas decisões técnicas, pela definição da arquitetura e pelo
+planejamento deste projeto. Defino as prioridades e a direção da solução,
+avaliando as recomendações apresentadas durante o desenvolvimento.
+
+Utilizo o OpenAI Codex como meu agente de IA para auxiliar na implementação das
+ideias e dos planos que aprovo. Esse apoio inclui análise dos dados, discussão de
+alternativas técnicas, geração de código, documentação e verificações. Mantenho
+a responsabilidade pela revisão e aprovação das entregas e pelas decisões finais.
