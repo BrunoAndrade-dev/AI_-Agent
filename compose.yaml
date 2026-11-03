@@ -15,11 +15,14 @@ services:
       retries: 10
 
   ollama:
-    image: ollama/ollama:latest
+    # Ollama 0.40.13, pinned to the inspected multi-platform manifest.
+    image: ollama/ollama@sha256:b2f0122c476bc9fe7ce679d8bb4bd555351e25e2554eefb156f61cb0a89cf429
+    environment:
+      OLLAMA_NO_CLOUD: "true"
     volumes:
       - ollama_data:/root/.ollama
     healthcheck:
-      test: ["CMD", "ollama", "list"]
+      test: ["CMD-SHELL", "OLLAMA_HOST=http://127.0.0.1:11434 ollama list"]
       interval: 10s
       timeout: 5s
       retries: 10

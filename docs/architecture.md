@@ -24,7 +24,11 @@ sem gerar camadas vazias para cada operação.
 Endpoints de negócio exigem autenticação por padrão. O mecanismo de sessão
 demonstrativa ainda será implementado, sem listar publicamente os clientes.
 Os CSVs originais ficam em `data/private`, fora do Git e das imagens Docker.
-Fixtures sintéticas serão fornecidas para reprodução pública.
+Fixtures CSV e PDF sintéticos já estão disponíveis para reprodução pública.
+
+As ferramentas possuem schemas JSON estritos. O retrieval do PDF é lexical,
+com referência de página e seção. O loop Ollama limita rodadas e contexto.
+Veja `docs/agent.md` para decisões e a pendência de validação com modelo real.
 
 ## Políticas e suposições
 
