@@ -1,4 +1,4 @@
-# Arquitetura inicial
+# Arquitetura
 
 ## Fluxo
 
@@ -15,14 +15,25 @@ Regras financeiras e consultas são executadas por código, não pelo LLM.
 - `chat`: sessões, mensagens, ferramentas e integração com o modelo.
 - `knowledge`: ingestão do manual e recuperação com página/seção/versão.
 
-Views cuidarão do transporte HTTP, serializers da validação de contratos e
-serviços das regras e integrações. Introduzir módulos conforme sua implementação,
-sem gerar camadas vazias para cada operação.
+Views cuidam do transporte HTTP, serializers validam contratos e serviços
+executam as regras e integrações. O `StoreAgent` não depende de views ou de sessão HTTP.
 
 ## Segurança e dados
 
-Endpoints de negócio exigem autenticação por padrão. O mecanismo de sessão
-demonstrativa ainda será implementado, sem listar publicamente os clientes.
+Endpoints de negócio exigem autenticação por padrão. O operador emite um token
+demonstrativo vinculado a um cliente, armazenando apenas seu hash. A API o troca
+por sessão Django HttpOnly, com CSRF inclusive no login. Não há listagem pública
+de clientes nem seleção de cliente em mensagens HTTP.
+
+Cada conversa é filtrada por usuário, cliente vinculado e identificador do
+navegador. Outro login recebe um escopo novo, mesmo com o mesmo token. Revogação
+e expiração são verificadas a cada requisição. Contratos e exemplos: `docs/api.md`.
+
+`Conversation` guarda o estado limitado do agente; `ChatTurn` guarda texto do
+usuário, resposta efetiva, status e fontes. A geração reconstrói uma instância do
+agente a cada envio. UUID por envio garante retry idempotente. A transação trava
+somente a conversa com NOWAIT e grava turno/estado juntos; concorrência retorna 409.
+Há até 25 turnos persistidos por conversa. Falhas não entram no contexto do modelo.
 Os CSVs originais ficam em `data/private`, fora do Git e das imagens Docker.
 Fixtures CSV e PDF sintéticos já estão disponíveis para reprodução pública.
 
@@ -47,7 +58,8 @@ resultados/limites da validação local com o modelo real.
 ## Deploy planejado
 
 Next.js na Vercel; backend, PostgreSQL e Ollama na máquina do desenvolvedor.
-Um túnel HTTPS exporá apenas a API após os controles de acesso e limites estarem
-implementados. A demonstração depende da máquina e do túnel ativos. Vercel não
+Um túnel HTTPS exporá apenas a API após configurar servidor de produção, cookies,
+origens e limites adequados ao ambiente público. A demonstração depende da máquina
+e do túnel ativos. Vercel não
 executará Ollama ou os containers. Teste local completo via Compose é a entrega
 reproduzível principal.

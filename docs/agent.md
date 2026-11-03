@@ -18,7 +18,10 @@ O modelo ainda exige revisão de qualidade; esses testes não o aprovam para pro
 
 O servidor Ollama 0.40.13 responde a `/api/version` e `/api/tags` na rede interna.
 A imagem está fixada por digest, com cloud desativado. Healthcheck não comprova
-presença do modelo. API pública de chat e sessão web pertencem à próxima etapa.
+presença do modelo. A API local de chat e sessão demonstrativa está implementada;
+veja [contratos HTTP](api.md). A suíte com a API possui 111 testes, além da
+[validação HTTP real](validation/2026-11-03-chat-api/report.md). Interface e deploy público
+continuam pendentes.
 
 Validações anteriores: 60 testes aprovados no backend Docker com PostgreSQL,
 incluindo parsing real do PDF sintético; seis verificações de retrieval no manual

@@ -1,0 +1,622 @@
+openapi: 3.0.3
+info:
+  title: Empório da Música API
+  version: 0.2.0
+  description: API do protótipo de atendimento da Empório da Música.
+paths:
+  /api/chat/conversations/:
+    get:
+      operationId: chat_conversations_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: Um número de página dentro do conjunto de resultados paginado.
+        schema:
+          type: integer
+      tags:
+      - Conversations
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedConversationList'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: ''
+        '429':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: ''
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: ''
+    post:
+      operationId: chat_conversations_create
+      description: Cria conversa vinculada ao token e à sessão. Não aceita customer_id.
+      parameters:
+      - in: header
+        name: X-CSRFToken
+        schema:
+          type: string
+        description: Token obtido em GET /api/chat/session/; após login use o token
+          renovado.
+        required: true
+      tags:
+      - Conversations
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Conversation'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: ''
+        '429':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: ''
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: ''
+  /api/chat/conversations/{conversation_id}/messages/:
+    get:
+      operationId: chat_conversations_messages_retrieve
+      description: Histórico persistido, em ordem cronológica, limitado a 25 turnos.
+      parameters:
+      - in: path
+        name: conversation_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Messages
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TurnHistory'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: ''
+        '429':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: ''
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: ''
+    post:
+      operationId: chat_conversations_messages_create
+      description: Geração síncrona. Reutilize request_id somente para repetir o mesmo
+        envio. Envios concorrentes na mesma conversa retornam 409. Falhas também são
+        persistidas; para uma nova tentativa de geração, use outro request_id.
+      parameters:
+      - in: header
+        name: X-CSRFToken
+        schema:
+          type: string
+        description: Token obtido em GET /api/chat/session/; após login use o token
+          renovado.
+        required: true
+      - in: path
+        name: conversation_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Messages
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MessageRequest'
+            examples:
+              ConsultaDeCatálogo:
+                value:
+                  request_id: 14c832eb-7c36-49aa-98ca-0bf81ee316ea
+                  text: Quais violões disponíveis até R$ 1000?
+                summary: Consulta de catálogo
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MessageRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MessageRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                CampoInválido:
+                  value:
+                    error:
+                      code: validation_error
+                      message: Revise os campos enviados.
+                      fields:
+                        customer_id:
+                        - Campo não permitido.
+                  summary: Campo inválido
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: ''
+        '429':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: ''
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatUnavailable'
+          description: ''
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TurnResult'
+              examples:
+                RespostaIlustrativaComABaseSintética:
+                  value:
+                    turn:
+                      id: f26beb44-10ec-436e-b65b-86c4d282b1e3
+                      request_id: 14c832eb-7c36-49aa-98ca-0bf81ee316ea
+                      user_message: Quais violões disponíveis até R$ 1000?
+                      text: 'Violão Exemplo Nylon: preço atual R$ 900,00.'
+                      status: ok
+                      sources: []
+                      tools_used:
+                      - search_products
+                      validation_errors: []
+                      created_at: '2026-11-03T12:00:00Z'
+                    replayed: false
+                  summary: Resposta ilustrativa com a base sintética
+          description: Novo turno concluído.
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TurnResult'
+          description: Retry idempotente; sem nova geração.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TurnResult'
+          description: Resposta não confirmada ou limite do agente.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: ''
+  /api/chat/session/:
+    get:
+      operationId: chat_session_retrieve
+      description: Obtém CSRF e estado da sessão, sem revelar contatos ou identidade
+        do cliente.
+      tags:
+      - Session
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionState'
+          description: ''
+        '429':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: ''
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: ''
+    post:
+      operationId: chat_session_create
+      description: Troca token local por sessão HttpOnly. Rotaciona sessão e CSRF.
+      parameters:
+      - in: header
+        name: X-CSRFToken
+        schema:
+          type: string
+        description: Token obtido em GET /api/chat/session/; após login use o token
+          renovado.
+        required: true
+      tags:
+      - Session
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SessionLogin'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SessionLogin'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SessionLogin'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionState'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: ''
+        '429':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: ''
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: ''
+    delete:
+      operationId: chat_session_destroy
+      description: Encerra a sessão; conversas antigas não passam a outra sessão.
+      parameters:
+      - in: header
+        name: X-CSRFToken
+        schema:
+          type: string
+        description: Token obtido em GET /api/chat/session/; após login use o token
+          renovado.
+        required: true
+      tags:
+      - Session
+      responses:
+        '204':
+          description: No response body
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: ''
+        '429':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: ''
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: ''
+  /api/health/:
+    get:
+      operationId: health_retrieve
+      description: Return a stable payload for API process health checks.
+      tags:
+      - Infrastructure
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Health'
+          description: ''
+components:
+  schemas:
+    ChatTurn:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        request_id:
+          type: string
+          format: uuid
+          readOnly: true
+        user_message:
+          type: string
+          readOnly: true
+        text:
+          type: string
+          readOnly: true
+        status:
+          type: string
+          readOnly: true
+        sources:
+          type: array
+          items:
+            $ref: '#/components/schemas/Source'
+          readOnly: true
+        tools_used:
+          type: array
+          items:
+            type: string
+          readOnly: true
+        validation_errors:
+          type: array
+          items:
+            type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - request_id
+      - sources
+      - status
+      - text
+      - tools_used
+      - user_message
+      - validation_errors
+    ChatUnavailable:
+      oneOf:
+      - $ref: '#/components/schemas/TurnResult'
+      - $ref: '#/components/schemas/Error'
+    Conversation:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - updated_at
+    Error:
+      type: object
+      properties:
+        error:
+          $ref: '#/components/schemas/ErrorDetail'
+      required:
+      - error
+    ErrorDetail:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        fields: {}
+      required:
+      - code
+      - fields
+      - message
+    Health:
+      type: object
+      description: Describe process liveness, without asserting dependency readiness.
+      properties:
+        status:
+          $ref: '#/components/schemas/StatusEnum'
+      required:
+      - status
+    MessageRequest:
+      type: object
+      description: Reject unknown fields instead of silently ignoring identity injection.
+      properties:
+        request_id:
+          type: string
+          format: uuid
+          description: UUID novo por envio; reutilize apenas no retry.
+        text:
+          type: string
+          maxLength: 2000
+          minLength: 1
+      required:
+      - request_id
+      - text
+    PaginatedConversationList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Conversation'
+    SessionLogin:
+      type: object
+      description: Reject unknown fields instead of silently ignoring identity injection.
+      properties:
+        access_token:
+          type: string
+          writeOnly: true
+          description: Token emitido pelo comando local create_demo_access; nunca
+            o ID do cliente.
+          maxLength: 128
+          minLength: 20
+      required:
+      - access_token
+    SessionState:
+      type: object
+      properties:
+        authenticated:
+          type: boolean
+        csrf_token:
+          type: string
+        expires_at:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+      - authenticated
+      - csrf_token
+      - expires_at
+    Source:
+      type: object
+      properties:
+        source:
+          type: string
+        version:
+          type: string
+        page:
+          type: integer
+          minimum: 1
+        section:
+          type: string
+      required:
+      - page
+      - section
+      - source
+      - version
+    StatusEnum:
+      enum:
+      - ok
+      type: string
+      description: '* `ok` - ok'
+    TurnHistory:
+      type: object
+      properties:
+        conversation_id:
+          type: string
+          format: uuid
+        turns:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChatTurn'
+        max_turns:
+          type: integer
+      required:
+      - conversation_id
+      - max_turns
+      - turns
+    TurnResult:
+      type: object
+      properties:
+        turn:
+          $ref: '#/components/schemas/ChatTurn'
+        replayed:
+          type: boolean
+      required:
+      - replayed
+      - turn
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: sessionid

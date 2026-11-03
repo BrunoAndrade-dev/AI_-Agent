@@ -2,12 +2,12 @@
 
 Protótipo de atendimento para uma loja fictícia de instrumentos musicais.
 
-**Status:** camada de dados, ferramentas, índice de políticas e orquestração do
-agente por CLI implementados. A validação local com `qwen3:1.7b` identificou falhas
-de consulta e fidelidade; foram implementadas correções e proteções, ainda sem
-aprovação definitiva do modelo. Veja `docs/agent.md` e os relatórios em `docs/validation`.
-Sessão web e interface de chat ainda não foram
-implementadas. Nenhuma integração com LLM é simulada como funcional.
+**Status:** camada de dados, ferramentas, políticas, agente por CLI e API de
+atendimento implementados. A API possui sessões demonstrativas, histórico no
+PostgreSQL, isolamento por sessão, retries idempotentes e documentação Swagger.
+Validação: 111 testes e fluxo HTTP real com `qwen3:1.7b` e dados sintéticos.
+O modelo continua em avaliação de qualidade; a interface de chat ainda não foi
+implementada. Veja `docs/api.md`, `docs/agent.md` e os relatórios em `docs/validation`.
 
 ## Stack
 
@@ -52,6 +52,13 @@ O frontend usa a porta local 3000; o backend, 8000. Rotas da API:
 - `GET /api/health/`: liveness do processo; não comprova prontidão do banco/modelo.
 - `GET /api/schema/`: esquema OpenAPI.
 - `GET /api/docs/`: Swagger UI.
+- `GET/POST/DELETE /api/chat/session/`: sessão demonstrativa e CSRF.
+- `GET/POST /api/chat/conversations/`: conversas desta sessão.
+- `GET/POST /api/chat/conversations/{id}/messages/`: histórico e envio ao agente.
+
+Para emitir um acesso local, testar pelo Swagger e integrar o frontend, siga
+[`docs/api.md`](docs/api.md). O cliente da conversa vem da sessão, não de um
+`customer_id` enviado por HTTP. Tokens de demonstração não são configuração pública.
 
 Ollama inicia sem modelo baixado. Consulte `docs/agent.md` para importar o PDF,
 baixar o modelo e usar o CLI. Conversas exigem download e configuração do modelo.
