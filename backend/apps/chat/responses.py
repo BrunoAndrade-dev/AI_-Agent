@@ -5,6 +5,67 @@ import re
 from apps.orders.models import Order
 
 
+def catalog_snapshot_reply(results: list[dict]) -> str | None:
+    """Render catalog-only facts without reinterpreting discounts or sales channels.
+
+    The model still chooses queries and may request further tools. This renderer
+    only formats their final, current-turn results; it does not rank suitability.
+    """
+    if not results or not all("products" in item or "product" in item for item in results):
+        return None
+    products = {}
+    for item in results:
+        for product in item.get("products", []):
+            products[product["id"]] = product
+        if item.get("product"):
+            products[item["product"]["id"]] = item["product"]
+    if not products:
+        return (
+            "Não encontrei produtos para os filtros consultados. "
+            "Pode informar outro nome ou característica?"
+        )
+    blocks = []
+    for product in products.values():
+        status = {
+            "active": "ativo",
+            "discontinued": "descontinuado",
+            "coming_soon": "em breve",
+        }.get(product["status"], product["status"])
+        availability = "Disponível" if product["available"] else "Indisponível para venda"
+        lines = [
+            f"{product['name']} (produto {product['id']}) — {availability}.",
+            f"Status: {status}. Estoque registrado: {product['stock_quantity']}.",
+        ]
+
+        def brl(key: str) -> str:
+            return product[key].replace(".", ",")
+
+        if product["promotion"]:
+            percent = product["promotion"]["discount_percent"].replace(".", ",")
+            lines.append(
+                f"De R$ {brl('table_price')} por R$ {brl('current_price')} "
+                f"({percent}% de desconto sobre o preço de tabela)."
+            )
+            lines.append(
+                f"PIX: R$ {brl('pix_price')}. O desconto de PIX não acumula com a promoção."
+            )
+        else:
+            lines.append(f"Preço de tabela: R$ {brl('table_price')}. PIX: R$ {brl('pix_price')}.")
+        if product.get("specs"):
+            labels = {"strings": "Cordas", "electronics": "Eletrônica", "color": "Cor"}
+            lines.append(
+                "Características: "
+                + "; ".join(
+                    f"{labels.get(key, key.replace('_', ' '))}: {value}"
+                    for key, value in product["specs"].items()
+                )
+            )
+        blocks.append("\n".join(lines))
+    if any(item.get("truncated") for item in results):
+        blocks.append("Há mais resultados. Refine os filtros para consultar outras opções.")
+    return "\n\n".join(blocks)
+
+
 def scoped_order_reply(results: list[dict]) -> str | None:
     """Keep authorization denials independent from the model's interpretation."""
     if not results or not all(
@@ -51,7 +112,11 @@ def return_guidance(sources: list[dict]) -> str:
     The prototype does not yet track verified channel/receipt facts or authorize
     returns. Keep that boundary deterministic instead of asking the LLM to approve.
     """
-    relevant = [source for source in sources if asks_about_returns(source["section"])]
+    relevant = [
+        source
+        for source in sources
+        if asks_about_returns(source["section"]) or re.match(r"^4(?:\.|\s)", source["section"])
+    ]
     passages = relevant or sources
     excerpts = "\n\n".join(source["text"] for source in passages)
     return (

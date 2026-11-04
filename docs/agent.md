@@ -19,9 +19,11 @@ O modelo ainda exige revisão de qualidade; esses testes não o aprovam para pro
 O servidor Ollama 0.40.13 responde a `/api/version` e `/api/tags` na rede interna.
 A imagem está fixada por digest, com cloud desativado. Healthcheck não comprova
 presença do modelo. A API local de chat e sessão demonstrativa está implementada;
-veja [contratos HTTP](api.md). A suíte com a API possui 111 testes, além da
-[validação HTTP real](validation/2026-11-03-chat-api/report.md). Interface e deploy público
-continuam pendentes.
+veja [contratos HTTP](api.md). A suíte com a API possui 119 testes, além da
+[validação HTTP real](validation/2026-11-03-chat-api/report.md). A interface está
+implementada; o deploy público continua pendente.
+As consultas adicionais e a avaliação dos arquivos originais estão no
+[relatório de continuidade](validation/2026-11-03-agent-followup/report.md).
 
 Validações anteriores: 60 testes aprovados no backend Docker com PostgreSQL,
 incluindo parsing real do PDF sintético; seis verificações de retrieval no manual
@@ -48,6 +50,14 @@ protocolo nativo. Consultas usam ORM, sem SQL gerado. Preços usam Decimal e
 arredondamento comercial. Uma verificação parcial bloqueia valores explicitamente
 marcados com R$ que não estejam nos preços/trechos consultados. Ela não verifica
 toda a semântica nem a associação de um preço ao produto ou meio de pagamento.
+
+Nas respostas exclusivamente de catálogo, a apresentação final é feita pelo código
+a partir dos resultados atuais: tabela, promoção, PIX, status e estoque. Isso
+evita canais inventados e frases ambíguas sobre acumular descontos. IDs explícitos,
+inclusive listas como "produtos 2 e 3", exigem consultas individuais. Perguntas
+mistas de status de pedido e devolução exigem ambas as fontes; uma consulta
+pendente volta ao planejador estruturado com a ferramenta necessária. Orçamento
+"até ... reais" por extenso pede confirmação numérica, sem presumir um valor.
 
 Sem evidência válida no turno, a prosa factual é rejeitada; chamadas com erro não
 contam como evidência. Há até quatro rodadas/oito chamadas, incluindo correções.

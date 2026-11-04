@@ -1,0 +1,113 @@
+[
+  {
+    "scenario": "promotion",
+    "status": "unverified_response",
+    "seconds": 30.72,
+    "tools_used": [
+      "search_products"
+    ],
+    "validation_errors": [
+      "missing_product_lookup",
+      "missing_product_lookup",
+      "missing_product_lookup"
+    ],
+    "execution": "initial",
+    "quoted_prices_present": {
+      "table_price": false,
+      "current_price": false,
+      "pix_price": false
+    }
+  },
+  {
+    "scenario": "unavailable",
+    "status": "ok",
+    "seconds": 23.58,
+    "tools_used": [
+      "get_product"
+    ],
+    "validation_errors": [],
+    "execution": "initial",
+    "quoted_prices_present": {
+      "table_price": true,
+      "current_price": true,
+      "pix_price": true
+    }
+  },
+  {
+    "scenario": "unavailable",
+    "status": "ok",
+    "seconds": 17.6,
+    "tools_used": [
+      "get_product"
+    ],
+    "validation_errors": [],
+    "execution": "initial",
+    "quoted_prices_present": {
+      "table_price": true,
+      "current_price": true,
+      "pix_price": true
+    }
+  },
+  {
+    "scenario": "own_order",
+    "status": "ok",
+    "seconds": 25.76,
+    "tools_used": [
+      "get_order"
+    ],
+    "validation_errors": [],
+    "execution": "initial"
+  },
+  {
+    "scenario": "other_order",
+    "status": "ok",
+    "seconds": 13.39,
+    "tools_used": [
+      "get_order"
+    ],
+    "validation_errors": [],
+    "execution": "initial"
+  },
+  {
+    "scenario": "policy",
+    "status": "ok",
+    "seconds": 51.36,
+    "tools_used": [
+      "search_policies"
+    ],
+    "validation_errors": [],
+    "execution": "initial"
+  },
+  {
+    "cleanup": {
+      "event": "cleanup",
+      "demo_catalog_unchanged": true
+    },
+    "execution": "initial"
+  },
+  {
+    "scenario": "promotion",
+    "status": "ok",
+    "seconds": 126.62,
+    "tools_used": [
+      "search_products",
+      "get_product"
+    ],
+    "validation_errors": [
+      "missing_product_lookup"
+    ],
+    "execution": "retry",
+    "quoted_prices_present": {
+      "table_price": true,
+      "current_price": true,
+      "pix_price": true
+    }
+  },
+  {
+    "cleanup": {
+      "event": "cleanup",
+      "demo_catalog_unchanged": true
+    },
+    "execution": "retry"
+  }
+]

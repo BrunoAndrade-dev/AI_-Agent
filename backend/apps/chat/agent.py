@@ -1,6 +1,7 @@
 """Small bounded tool-calling loop, independent from HTTP views and UI."""
 
 import json
+import re
 from dataclasses import dataclass, field
 
 from django.db import DatabaseError
@@ -11,11 +12,12 @@ from apps.chat.ollama import InvalidModelResponse, ModelUnavailable, OllamaClien
 from apps.chat.prompts import REPAIR_PRICE, REQUIRE_TOOL, SYSTEM_PROMPT
 from apps.chat.responses import (
     asks_about_returns,
+    catalog_snapshot_reply,
     order_snapshot_reply,
     return_guidance,
     scoped_order_reply,
 )
-from apps.chat.tools import AgentContext, available_tools, execute_tool
+from apps.chat.tools import AgentContext, available_tools, execute_tool, explicit_product_ids
 
 
 @dataclass
@@ -46,6 +48,12 @@ class StoreAgent:
         """
         if not isinstance(text, str) or not text.strip() or len(text) > 2000:
             return AgentReply("Envie uma mensagem entre 1 e 2.000 caracteres.", "invalid_input")
+        word_budget = re.search(r"\baté\s+([^.!?;]{1,60}?)\s*reais\b", text, re.I)
+        if word_budget and not re.search(r"\d", word_budget[1]):
+            return AgentReply(
+                "Para respeitar seu orçamento, pode informar o valor em números, "
+                "por exemplo, R$ 1.000?"
+            )
         history = self.history[-8:]
         while sum(len(item["content"]) for item in history) > 4000:
             history = history[2:]
@@ -61,6 +69,9 @@ class StoreAgent:
         sources = []
         tools_used = []
         results = []
+        product_lookups = set()
+        order_lookups = set()
+        required_orders: set[int] = set()
         policy_passages = []
         validation_errors = []
 
@@ -72,8 +83,33 @@ class StoreAgent:
                 tools = available_tools(
                     messages=messages, product_references=self.product_references
                 )
+                pending_lookup = validation_errors[-1] if validation_errors else None
+                required_tool = {
+                    "missing_product_lookup": "get_product",
+                    "missing_order_lookup": "get_order",
+                    "missing_policy_evidence": "search_policies",
+                }.get(pending_lookup)
+                if required_tool == "get_product" and not (
+                    explicit_product_ids(text) - product_lookups
+                ):
+                    required_tool = None
+                if required_tool == "get_order" and not (required_orders - order_lookups):
+                    required_tool = None
+                if required_tool == "search_policies" and policy_passages:
+                    required_tool = None
+                if required_tool:
+                    tools = [item for item in tools if item["function"]["name"] == required_tool]
+                    if required_tool == "get_product" and tools:
+                        tools[0]["function"]["parameters"]["properties"]["product_id"]["enum"] = (
+                            sorted(explicit_product_ids(text) - product_lookups)
+                        )
                 try:
-                    message = self.client.chat(messages, tools, select_tool=not results)
+                    message = self.client.chat(
+                        messages,
+                        tools,
+                        select_tool=not results or bool(required_tool),
+                        require_tool=bool(required_tool),
+                    )
                     calls = message.get("tool_calls", [])
                     if not isinstance(calls, list):
                         raise InvalidModelResponse("Malformed tool calls.")
@@ -96,6 +132,28 @@ class StoreAgent:
                     messages[0]["content"] += "\n" + REQUIRE_TOOL
                     continue
                 if not calls:
+                    required_ids = explicit_product_ids(text)
+                    if results and required_ids - product_lookups:
+                        validation_errors.append("missing_product_lookup")
+                        messages[0]["content"] += (
+                            "\nConsulte get_product para CADA ID explícito antes de responder: "
+                            + json.dumps(sorted(required_ids - product_lookups))
+                        )
+                        continue
+                    required_orders = {
+                        int(value) for value in re.findall(r"\bpedido\s*#?\s*(\d+)\b", text, re.I)
+                    }
+                    if asks_about_returns(text) and not re.search(
+                        r"\b(?:status|total|rastre\w*|consult\w*|mostr\w*)\b", text, re.I
+                    ):
+                        required_orders = set()
+                    if results and required_orders - order_lookups:
+                        validation_errors.append("missing_order_lookup")
+                        messages[0]["content"] += (
+                            "\nConsulte get_order para os pedidos explícitos: "
+                            + json.dumps(sorted(required_orders - order_lookups))
+                        )
+                        continue
                     # Authorization denials are phrased by code, not inferred by the model.
                     answer = (
                         scoped_order_reply(results)
@@ -103,7 +161,13 @@ class StoreAgent:
                         or message.get("content", "")
                     )
                     if asks_about_returns(text) and policy_passages:
-                        answer = return_guidance(policy_passages)
+                        orders = [
+                            item for item in results if "order_id" in item or "reason" in item
+                        ]
+                        order_text = scoped_order_reply(orders) or order_snapshot_reply(orders)
+                        answer = "\n\n".join(
+                            part for part in (order_text, return_guidance(policy_passages)) if part
+                        )
                     error = (
                         "missing_policy_evidence"
                         if asks_about_returns(text) and not policy_passages
@@ -120,6 +184,7 @@ class StoreAgent:
                             else REQUIRE_TOOL
                         )
                         continue
+                    answer = catalog_snapshot_reply(results) or answer
                     if sources:
                         references = "; ".join(
                             f"{source['source']} — {source['section']}, p. {source['page']}"
@@ -149,6 +214,10 @@ class StoreAgent:
                         validation_errors.append(result["error"])
                     else:
                         results.append(result)
+                        if name == "get_product":
+                            product_lookups.add(arguments["product_id"])
+                        if name == "get_order":
+                            order_lookups.add(arguments["order_id"])
                         products = result.get("products", [])
                         if result.get("product"):
                             products = [*products, result["product"]]

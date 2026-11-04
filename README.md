@@ -5,9 +5,10 @@ Protótipo de atendimento para uma loja fictícia de instrumentos musicais.
 **Status:** camada de dados, ferramentas, políticas, agente por CLI e API de
 atendimento implementados. A API possui sessões demonstrativas, histórico no
 PostgreSQL, isolamento por sessão, retries idempotentes e documentação Swagger.
-Validação: 111 testes e fluxo HTTP real com `qwen3:1.7b` e dados sintéticos.
-O modelo continua em avaliação de qualidade; a interface de chat ainda não foi
-implementada. Veja `docs/api.md`, `docs/agent.md` e os relatórios em `docs/validation`.
+Validação: 119 testes de backend e fluxo HTTP real com `qwen3:1.7b` e dados sintéticos.
+O frontend de chat está integrado à API, com tema escuro, acesso demonstrativo,
+histórico e tratamento de falhas. O modelo continua em avaliação de qualidade.
+Veja `docs/frontend.md`, `docs/api.md`, `docs/agent.md` e `docs/validation`.
 
 ## Stack
 
@@ -36,7 +37,7 @@ scripts/          Automação auxiliar
 ## Execução local
 
 Pré-requisitos: Docker com Compose v2 e recursos compatíveis com o futuro modelo.
-O conjunto completo, incluindo frontend e modelo, ainda não foi validado.
+O modelo local exige recursos compatíveis; respostas podem atingir o tempo limite.
 
 1. Copiar `.env.example` para `.env`.
 2. Preencher `DJANGO_SECRET_KEY` e `POSTGRES_PASSWORD` com valores locais fortes.

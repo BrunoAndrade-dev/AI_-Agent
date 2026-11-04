@@ -78,10 +78,17 @@ class OllamaClient:
         response = self.request("/api/show", {"model": self.model})
         return {"model": self.model, "supports_tools": "tools" in response.get("capabilities", [])}
 
-    def chat(self, messages: list[dict], tools: list[dict], *, select_tool: bool = False) -> dict:
+    def chat(
+        self,
+        messages: list[dict],
+        tools: list[dict],
+        *,
+        select_tool: bool = False,
+        require_tool: bool = False,
+    ) -> dict:
         """Generate one turn; Qwen3 thinking is disabled to bound CPU latency."""
         if select_tool:
-            return self.select_tool(messages, tools)
+            return self.select_tool(messages, tools, require_tool=require_tool)
         response = self.request(
             "/api/chat",
             {
@@ -104,7 +111,9 @@ class OllamaClient:
             raise InvalidModelResponse("Model returned an invalid or truncated assistant message.")
         return message
 
-    def select_tool(self, messages: list[dict], tools: list[dict]) -> dict:
+    def select_tool(
+        self, messages: list[dict], tools: list[dict], *, require_tool: bool = False
+    ) -> dict:
         """Constrain the first decision to a validated tool or a nonfactual reply.
 
         This is JSON-schema constrained generation, not regex extraction of calls
@@ -127,22 +136,23 @@ class OllamaClient:
             }
             for item in tools
         ]
-        choices.append(
-            {
-                "type": "object",
-                "properties": {
-                    "name": {"const": "respond"},
-                    "arguments": {
-                        "type": "object",
-                        "properties": {"kind": {"enum": list(replies)}},
-                        "required": ["kind"],
-                        "additionalProperties": False,
+        if not require_tool:
+            choices.append(
+                {
+                    "type": "object",
+                    "properties": {
+                        "name": {"const": "respond"},
+                        "arguments": {
+                            "type": "object",
+                            "properties": {"kind": {"enum": list(replies)}},
+                            "required": ["kind"],
+                            "additionalProperties": False,
+                        },
                     },
-                },
-                "required": ["name", "arguments"],
-                "additionalProperties": False,
-            }
-        )
+                    "required": ["name", "arguments"],
+                    "additionalProperties": False,
+                }
+            )
         schema = {"anyOf": choices}
         instructions = (
             "Você é o planejador de consultas da Empório da Música. "

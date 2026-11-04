@@ -88,6 +88,22 @@ TOOLS = [
 SCHEMAS = {item["function"]["name"]: item["function"]["parameters"] for item in TOOLS}
 
 
+def explicit_product_ids(text: str) -> set[int]:
+    """Read explicitly labelled IDs, including Portuguese lists, never budgets."""
+    groups = re.findall(
+        r"\b(?:produtos?|ids?|instrumentos?)\s*[:#]?\s*"
+        r"(\d+(?:\s*(?:,|e)\s*\d+)*)\b",
+        text,
+        re.IGNORECASE,
+    )
+    return {
+        int(value)
+        for group in groups
+        for value in re.findall(r"\d+", group)
+        if 1 <= int(value) <= 2147483647
+    }
+
+
 def available_tools(
     *, messages: list[dict] | None = None, product_references: dict[int, str] | None = None
 ) -> list[dict]:
@@ -113,15 +129,7 @@ def available_tools(
         product_ids = set(product_references or {})
         for message in messages:
             if message["role"] == "user":
-                product_ids.update(
-                    int(identifier)
-                    for identifier in re.findall(
-                        r"\b(?:produto|id|instrumento)\s*[:#]?\s*(\d+)\b",
-                        message["content"],
-                        re.IGNORECASE,
-                    )
-                    if 1 <= int(identifier) <= 2147483647
-                )
+                product_ids.update(explicit_product_ids(message["content"]))
                 for token in re.findall(r"(?<!\w)\d+(?:\.\d+)*(?:,\d+)?(?!\w)", message["content"]):
                     amounts.update(monetary_values("R$ " + token))
         candidates = sorted(float(amount) for amount in amounts if 0 <= amount <= 1000000)

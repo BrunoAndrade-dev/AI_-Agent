@@ -61,6 +61,9 @@ services:
       dockerfile: docker/frontend/Dockerfile
     environment:
       NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-http://localhost:8000/api}
+    volumes:
+      - ./frontend/src:/app/src:ro
+      - ./frontend/public:/app/public:ro
     ports:
       - "127.0.0.1:3000:3000"
     depends_on:
