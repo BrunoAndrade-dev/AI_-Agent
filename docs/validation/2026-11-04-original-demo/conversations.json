@@ -1,0 +1,96 @@
+[
+  {
+    "example": "04-catalogo-original",
+    "material": "original",
+    "turns": [
+      {
+        "user_message": "Quanto custa o Takamine GD20? Ele está disponível?",
+        "text": "Takamine GD20 Dreadnought Natural (produto 95) — Disponível.\nStatus: ativo. Estoque registrado: 5.\nPreço de tabela: R$ 2199,00. PIX: R$ 2089,05.\nCaracterísticas: top: Cedro Sólido; neck: Mogno; Cor: Natural; scale: 650mm; Cordas: steel; back sides: Sapele; Eletrônica: no",
+        "status": "ok",
+        "sources": [],
+        "tools_used": [
+          "search_products"
+        ],
+        "validation_errors": [],
+        "created_at": "2026-11-04T03:24:24.810122+00:00"
+      },
+      {
+        "user_message": "E no PIX?",
+        "text": "Takamine GD20 Dreadnought Natural (produto 95) — Disponível.\nStatus: ativo. Estoque registrado: 5.\nPreço de tabela: R$ 2199,00. PIX: R$ 2089,05.\nCaracterísticas: top: Cedro Sólido; neck: Mogno; Cor: Natural; scale: 650mm; Cordas: steel; back sides: Sapele; Eletrônica: no",
+        "status": "ok",
+        "sources": [],
+        "tools_used": [
+          "get_product"
+        ],
+        "validation_errors": [],
+        "created_at": "2026-11-04T03:25:47.236459+00:00"
+      }
+    ]
+  },
+  {
+    "example": "05-politicas-originais",
+    "material": "original",
+    "turns": [
+      {
+        "user_message": "Qual o horário de funcionamento aos sábados e aos domingos?",
+        "text": "O horário de funcionamento da Empório da Música é o seguinte:\n\n- **Segunda a Sexta-feira:** 09:00 às 18:00  \n- **Sábado:** 09:00 às 13:00  \n- **Domingo e Feriados:** Fechado  \n\nEm datas especiais (como Black Friday, Aniversário da Loja ou Natal), o horário pode ser estendido, mas as alterações serão comunicadas nas redes sociais e no atendimento via WhatsApp. \n\nO atendimento presencial segue os mesmos horários, e o atendimento via WhatsApp também segue o mesmo horário, com respostas automáticas fora do expediente.\n\nFontes consultadas: policies.pdf — 2. Horário de Funcionamento, p. 2; policies.pdf — 7.1 Diretrizes de Atendimento, p. 6.",
+        "status": "ok",
+        "sources": [
+          {
+            "page": 2,
+            "source": "policies.pdf",
+            "section": "2. Horário de Funcionamento",
+            "version": "2.1"
+          },
+          {
+            "page": 6,
+            "source": "policies.pdf",
+            "section": "7.1 Diretrizes de Atendimento",
+            "version": "2.1"
+          }
+        ],
+        "tools_used": [
+          "search_policies"
+        ],
+        "validation_errors": [],
+        "created_at": "2026-11-04T03:31:40.116000+00:00"
+      },
+      {
+        "user_message": "Qual é a regra do PIX quando o produto já está em promoção?",
+        "text": "Sobre PIX e promoções, o manual informa:\n\n6.2 Regras de Promoções Cumulatividade: promoções não são cumulativas. O desconto de PIX (5%) não se aplica sobre preços já promocionais. Estoque: promoções estão sujeitas à disponibilidade de estoque. Produtos esgotados durante a promoção não geram direito a rain check (reserva de preço). Comunicação: preços promocionais devem sempre ser apresentados junto ao preço original e o percentual de desconto, para total transparência ao cliente.\n\nFontes consultadas: policies.pdf — 6.2 Regras de Promoções, p. 6; policies.pdf — 6.1 Tipos de Promoção, p. 6; policies.pdf — 3. Formas de Pagamento, p. 3; policies.pdf — 3.1 Regras de Parcelamento, p. 3.",
+        "status": "ok",
+        "sources": [
+          {
+            "page": 6,
+            "source": "policies.pdf",
+            "section": "6.2 Regras de Promoções",
+            "version": "2.1"
+          },
+          {
+            "page": 6,
+            "source": "policies.pdf",
+            "section": "6.1 Tipos de Promoção",
+            "version": "2.1"
+          },
+          {
+            "page": 3,
+            "source": "policies.pdf",
+            "section": "3. Formas de Pagamento",
+            "version": "2.1"
+          },
+          {
+            "page": 3,
+            "source": "policies.pdf",
+            "section": "3.1 Regras de Parcelamento",
+            "version": "2.1"
+          }
+        ],
+        "tools_used": [
+          "search_policies"
+        ],
+        "validation_errors": [],
+        "created_at": "2026-11-04T03:32:53.760493+00:00"
+      }
+    ]
+  }
+]

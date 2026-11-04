@@ -1,0 +1,13 @@
+{
+  "database": "emporio_original",
+  "counts": {
+    "categories": 9,
+    "products": 65,
+    "customers": 50,
+    "orders": 20,
+    "order_items": 22,
+    "promotions": 25
+  },
+  "policy_pages": 8,
+  "policy_chunks": 28
+}

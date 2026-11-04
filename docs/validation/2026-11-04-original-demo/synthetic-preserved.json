@@ -1,0 +1,15 @@
+{
+  "before": {
+    "products": 5,
+    "customers": 2,
+    "conversations": 7,
+    "turns": 13
+  },
+  "after": {
+    "products": 5,
+    "customers": 2,
+    "conversations": 7,
+    "turns": 13
+  },
+  "unchanged": true
+}

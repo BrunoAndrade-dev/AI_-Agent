@@ -1,0 +1,14 @@
+{
+  "backend/config/settings.py": "d2ed1d2fe4f8b838066626963a00d03cda9a7bdc4034962f3d63dbba326d8db3",
+  "backend/config/urls.py": "87d03631a88b8ee77eed4139959c25b72602d6111336cdb5fc62aefc52c120c2",
+  "backend/apps/chat/models.py": "5f612b59ed05d52252ffe52cc4353b6e792d6211039c5d3c8cebcefa6bec1a2f",
+  "backend/apps/chat/access.py": "0e40ee513d4c5937952cb4d759de501e571a09362b72f1e0c9e63b18a895373a",
+  "backend/apps/chat/serializers.py": "576b0480b270e19f6c5cdd00a9190d020a7b18b7ee0ef757ca793c09b024ad52",
+  "backend/apps/chat/services.py": "96cb8475a7ac72b25d5e724675ca6ad4c840e960be8e2acf4642900ac9d8342f",
+  "backend/apps/chat/views.py": "c1ab08262169093cb798d26fe782a7c7b605e2e663899dc18d2e8cfc00f6bbc8",
+  "backend/apps/chat/migrations/0001_initial.py": "b19ee4d5a80deb3da31916a15b89b7ee94434662caac6cf92055576659cd2c61",
+  "backend/apps/core/exceptions.py": "da92ad208e520db3f08b5f73c23527147b781d824e2409b7c61aaf8499a5ef7e",
+  "backend/tests/test_chat_api.py": "b2b13a1c785ee7afd5418921fdaeaf0b34e578537c7cb749529d51049d392327",
+  "scripts/validate_chat_api.py": "0626293fb1289f956b86c46c49a95412de16d4c4a020187a0705b22738830c9b",
+  "docs/openapi.yaml": "39b1b5c1e4e94e0247dd6d57a7fcde2efe45f9f8e8a7f2c0b2ff950a15f6f0d1"
+}

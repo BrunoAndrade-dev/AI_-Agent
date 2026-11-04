@@ -1,0 +1,19 @@
+[
+  {
+    "user_message": "Qual é a regra do PIX quando o produto já está em promoção?",
+    "text": "A regra do PIX para compras em promoção é a seguinte:\n\n- **5% de desconto sobre o preço de tabela** é aplicado ao valor do produto, mesmo quando ele está em promoção.\n- O desconto é calculado automaticamente no sistema e refletido no valor final da compra.\n\nPortanto, ao pagar com PIX, você receberá o valor com o desconto de 5% aplicado ao preço de tabela do produto.\n\nFontes consultadas: policies.pdf — 3. Formas de Pagamento, p. 3.",
+    "status": "ok",
+    "sources": [
+      {
+        "page": 3,
+        "source": "policies.pdf",
+        "section": "3. Formas de Pagamento",
+        "version": "2.1"
+      }
+    ],
+    "tools_used": [
+      "search_policies"
+    ],
+    "validation_errors": []
+  }
+]

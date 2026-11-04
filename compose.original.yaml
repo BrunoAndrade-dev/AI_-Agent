@@ -1,0 +1,6 @@
+# Use together with compose.yaml. Existing PostgreSQL/Ollama volumes stay unchanged.
+services:
+  backend:
+    environment:
+      POSTGRES_DB: emporio_original
+      DJANGO_SESSION_COOKIE_NAME: emporio_original_session

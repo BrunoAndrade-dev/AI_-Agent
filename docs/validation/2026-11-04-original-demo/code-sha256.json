@@ -1,0 +1,11 @@
+{
+  "compose.original.yaml": "8e59027dfb3e342d7fd9e307f109969ea2fbd1833de45cc07a8cfb465d8cfd91",
+  "backend/config/settings.py": "f44a43ecd07ff1cde233403a1e6cbfd180628f8e5999ed625f3d02dd855b3a6e",
+  "backend/apps/core/management/commands/create_original_database.py": "81eb004a7e077d9da3ac7e50891b1f547662b509e9ad3fbc9ec7f3091b39c791",
+  "backend/apps/catalog/services.py": "a14b6e01997b4e8a9c3433c035e9a7066f4adbaad8d907795593de716b84b343",
+  "backend/apps/chat/tools.py": "5964782c488e8afec4544232dbbb7a6909d112f0f34c307a8580e8dfb0891141",
+  "backend/apps/chat/agent.py": "732adaad6fb7d0ea7e2dfc30427f3816b30818d4d91e92c7d4d1c0a006e8cfe3",
+  "backend/apps/chat/responses.py": "b7cb73d2f6f8511ad713e3f1b50f82c8ef95388e8d38e1dcce40fb87639e203e",
+  "backend/tests/evaluation.py": "06e7544b183cf00e3a008ea11f92bf2905e917529488fa531e800c091755e6c6",
+  "scripts/export_original_examples.py": "da6727b52828034050fdd3cf4b23df3e9efcdf177229b5caf6f73595397fe9b7"
+}

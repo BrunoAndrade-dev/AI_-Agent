@@ -1,0 +1,9 @@
+{
+  "backend/apps/chat/agent.py": "e2c1542d7e5a226462d7cc4c62bd1daa5faa1b6287451387b2c9fdbd020ac4d6",
+  "backend/apps/chat/tools.py": "2e6945f1a33eebaa29798adba576ff9e919e8d8fbf9c78fa37e2aae4622a163f",
+  "backend/apps/chat/ollama.py": "73bb107ceb2ff6533cc142e905f67665af7b50e998bfd6b38a299aa647598e0c",
+  "backend/apps/chat/responses.py": "992d3d04d59001dffcf824d21cc9ab3f71f70cf7510f604260925b1b6b127083",
+  "backend/tests/test_agent_followup.py": "7476ee3f6558e779bd3d8ea7e3673e7116e7f2ba4dd2f20fd603b3dd541ff8cc",
+  "scripts/evaluate_agent_followup.py": "f45d579d7035840edf0df5b432342913393456298a8bf9fb77b113dc0ec8ddcb",
+  "scripts/evaluate_original_data.py": "b4107a111a61544c52867698e05b9bf8604f21812a0fa5cc9187539b7b31ed3f"
+}
