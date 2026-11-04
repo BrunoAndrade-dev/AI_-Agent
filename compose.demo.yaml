@@ -1,0 +1,30 @@
+# Additive services: leaves backend, database, Ollama and their volumes intact.
+# Start with --no-deps; the dedicated synthetic database must already exist.
+services:
+  public_api:
+    image: emporio-musica-backend:demo
+    build:
+      context: .
+      dockerfile: docker/backend/Dockerfile.demo
+    env_file:
+      - .env
+      - .runtime/public-demo.env
+    environment:
+      DJANGO_SETTINGS_MODULE: config.public_demo
+      POSTGRES_DB: emporio_public_demo
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      OLLAMA_BASE_URL: http://ollama:11434
+    volumes:
+      - ./backend:/app:ro
+      - ./data/synthetic:/data/synthetic:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health/', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+  api_tunnel:
+    image: ${CLOUDFLARED_IMAGE:?Set the pinned cloudflared image}
+    command: ["tunnel", "--no-autoupdate", "--protocol", "http2", "--url", "http://public_api:8000"]
+    restart: unless-stopped
