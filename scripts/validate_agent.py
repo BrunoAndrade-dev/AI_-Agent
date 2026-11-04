@@ -10,31 +10,10 @@ import json
 import time
 from dataclasses import asdict
 
-from apps.catalog.models import Product
 from apps.chat.agent import StoreAgent
 from apps.chat.ollama import OllamaClient
 from apps.chat.tools import AgentContext
-from apps.knowledge.models import PolicyDocument
-
-
-def check_synthetic_environment() -> None:
-    """Refuse a different model/catalog/manual before logging real conversations."""
-    import csv
-    import hashlib
-    from pathlib import Path
-
-    if OllamaClient().model != "qwen3:1.7b":
-        raise RuntimeError("This evaluation requires qwen3:1.7b; no model was changed.")
-    with Path("/data/synthetic/products.csv").open() as source:
-        expected = {(int(row["product_id"]), row["name"]) for row in csv.DictReader(source)}
-    actual = set(Product.objects.values_list("id", "name"))
-    checksum = hashlib.sha256(Path("/data/synthetic/policies-demo.pdf").read_bytes()).hexdigest()
-    if (
-        actual != expected
-        or not PolicyDocument.objects.filter(key="store-policies", sha256=checksum).exists()
-    ):
-        raise RuntimeError("Synthetic catalog/manual not confirmed; evaluation aborted.")
-
+from tests.evaluation import check_synthetic_environment
 
 check_synthetic_environment()
 

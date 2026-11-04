@@ -82,9 +82,10 @@ Na base original: 9 categorias, 65 produtos, 50 clientes, 20 pedidos, 22 itens,
 25 promoções; 1 grupo de e-mail compartilhado, 2 totais históricos divergentes
 e 2 produtos não ativos com estoque positivo.
 
-O PDF não é ingerido por este comando. Sua recuperação pertence à próxima etapa.
+O PDF não é ingerido por este comando. A ingestão é feita separadamente com
+`ingest_policies`, conforme [documentação do agente](agent.md).
 
-## Validação realizada nesta etapa
+## Histórico da validação da camada de dados
 
 - PostgreSQL 17 real, com migrations aplicadas em banco vazio.
 - Build da imagem do backend a partir das dependências fixadas.

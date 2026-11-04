@@ -2,13 +2,18 @@
 
 final result: passed
 
+Este resultado se aplica somente à revisão visual e aos fluxos de interface
+descritos abaixo. Não é aprovação geral do agente ou do modelo.
+
 Escopo: adaptação visual e integração do chat. Este resultado não aprova a
-qualidade geral do modelo local. Não houve commit nem push.
+qualidade geral do modelo local. O registro descreve a validação realizada antes
+do commit `854b564`; não implica autorização para novos commits ou push.
 
 ## Referência e comparação
 
-Referência fornecida pelo usuário:
-`/tmp/codex-clipboard-42723ca7-be0b-44e9-a4dc-0a1d73a471eb.png` (1230 × 693).
+Referência fornecida pelo usuário: captura do protótipo Empório da Música no
+Figma Make, com paleta clara e painel central de conversa (1230 × 693).
+A imagem de referência está preservada no lado esquerdo da comparação abaixo.
 Implementação observada em `http://localhost:3000`, viewport desktop 1231 × 800
 e celular 390 × 844. Capturas têm largura útil menor quando há barra de rolagem.
 
@@ -77,3 +82,18 @@ limitação real a investigar separadamente.
 Evidências: [desktop](docs/validation/2026-11-03-frontend/images/desktop.jpg),
 [celular em espera](docs/validation/2026-11-03-frontend/images/mobile.jpg),
 [histórico](docs/validation/2026-11-03-frontend/images/history-mobile.jpg).
+
+## Revisão complementar para entrega
+
+A revisão das respostas do catálogo identificou um problema de legibilidade:
+quebras de linha vindas da API eram colapsadas em um único parágrafo (P2).
+O CSS de `.reply-copy p` passou a usar `white-space: pre-line`, preservando o texto
+e a segurança do Markdown. Após recarregar, o estilo computado e a captura do
+exemplo PIX confirmaram a separação das linhas.
+
+Antes: [parágrafo colapsado](docs/validation/2026-11-03-delivery/images/before-line-breaks.jpg).
+Depois: [resposta com linhas preservadas](docs/examples/images/01-catalogo-e-pix.jpg).
+As capturas mostram estados diferentes da conversa e não servem para comparação
+pixel a pixel. A mudança avaliada é a separação de campos dentro da resposta.
+O resultado inicial acima permanece histórico; a revisão funcional complementar
+e seus limites estão no [relatório de entrega](docs/validation/2026-11-03-delivery/report.md).

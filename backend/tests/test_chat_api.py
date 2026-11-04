@@ -81,6 +81,18 @@ class ChatApiTests(TestCase):
         self.assertEqual(response.status_code, 403)
         self.assertFalse(client.get(SESSION).json()["authenticated"])
 
+    @override_settings(SESSION_COOKIE_NAME="emporio_original_session")
+    def test_original_demo_uses_its_own_session_cookie(self):
+        original_client = authorized_client(self.token)
+        self.assertIn("emporio_original_session", original_client.cookies)
+        self.assertNotIn("sessionid", original_client.cookies)
+        legacy_client = APIClient()
+        legacy_client.cookies["sessionid"] = original_client.cookies[
+            "emporio_original_session"
+        ].value
+        self.assertFalse(legacy_client.get(SESSION).json()["authenticated"])
+        self.assertTrue(original_client.get(SESSION).json()["authenticated"])
+
     def test_authenticated_writes_require_csrf(self):
         self.client.credentials()
         response = self.client.post(CONVERSATIONS, {}, format="json")
@@ -276,14 +288,30 @@ class ChatApiTests(TestCase):
         self.assertEqual(response.json()["error"]["code"], "throttled")
         self.assertIn("Retry-After", response)
 
+    @override_settings(
+        CORS_ALLOWED_ORIGINS=["http://localhost:3000", "http://localhost:3001"],
+        CSRF_TRUSTED_ORIGINS=["http://localhost:3000", "http://localhost:3001"],
+    )
     def test_frontend_origin_accepts_credentials_and_checks_csrf(self):
-        response = self.client.get(SESSION, HTTP_ORIGIN="http://localhost:3000")
-        self.assertEqual(response["Access-Control-Allow-Origin"], "http://localhost:3000")
-        self.assertEqual(response["Access-Control-Allow-Credentials"], "true")
-        response = self.client.post(
-            CONVERSATIONS, {}, format="json", HTTP_ORIGIN="http://localhost:3000"
-        )
-        self.assertEqual(response.status_code, 201)
+        for origin in ("http://localhost:3000", "http://localhost:3001"):
+            with self.subTest(origin=origin):
+                client = APIClient(enforce_csrf_checks=True)
+                response = client.get(SESSION, HTTP_ORIGIN=origin)
+                self.assertEqual(response["Access-Control-Allow-Origin"], origin)
+                self.assertEqual(response["Access-Control-Allow-Credentials"], "true")
+                response = client.post(
+                    SESSION,
+                    {"access_token": self.token},
+                    format="json",
+                    HTTP_ORIGIN=origin,
+                    HTTP_X_CSRFTOKEN=response.json()["csrf_token"],
+                )
+                self.assertEqual(response.status_code, 200)
+                client.credentials(HTTP_X_CSRFTOKEN=response.json()["csrf_token"])
+                self.assertEqual(
+                    client.post(CONVERSATIONS, {}, format="json", HTTP_ORIGIN=origin).status_code,
+                    201,
+                )
         response = self.client.post(
             CONVERSATIONS, {}, format="json", HTTP_ORIGIN="https://invalid.example"
         )

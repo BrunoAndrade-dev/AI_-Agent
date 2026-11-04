@@ -1,0 +1,16 @@
+{
+  "role": "assistant",
+  "content": "",
+  "tool_calls": [
+    {
+      "function": {
+        "name": "search_products",
+        "arguments": {
+          "query": "Takamine GD20",
+          "category": "Guitarras",
+          "available_only": true
+        }
+      }
+    }
+  ]
+}

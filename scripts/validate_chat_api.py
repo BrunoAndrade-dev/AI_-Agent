@@ -14,14 +14,15 @@ from pathlib import Path
 from urllib.error import HTTPError
 from urllib.request import HTTPCookieProcessor, ProxyHandler, Request, build_opener
 
+from django.conf import settings
+from django.contrib.auth import get_user_model
+from django.contrib.sessions.models import Session
+
 from apps.catalog.models import Product
 from apps.chat.access import issue_demo_access
 from apps.chat.models import ChatTurn, Conversation, DemoAccess
 from apps.customers.models import Customer
 from apps.knowledge.models import PolicyDocument
-from django.conf import settings
-from django.contrib.auth import get_user_model
-from django.contrib.sessions.models import Session
 
 
 class Browser:
@@ -113,7 +114,13 @@ def validate():
                 assert replay_status == 200 and replay["replayed"]
                 assert replay["turn"]["id"] == body["turn"]["id"]
                 print(
-                    json.dumps({"step": "retry", "http_status": replay_status, "same_turn": True}),
+                    json.dumps(
+                        {
+                            "step": "retry",
+                            "http_status": replay_status,
+                            "same_turn": True,
+                        }
+                    ),
                     flush=True,
                 )
             elif index == 1:
@@ -129,7 +136,13 @@ def validate():
         status, _ = other.request("GET", path)
         assert status == 404
         print(
-            json.dumps({"step": "history_and_isolation", "turns": 4, "other_browser_http": status}),
+            json.dumps(
+                {
+                    "step": "history_and_isolation",
+                    "turns": 4,
+                    "other_browser_http": status,
+                }
+            ),
             flush=True,
         )
     finally:
@@ -149,7 +162,10 @@ def validate():
         get_user_model().objects.filter(pk=access.user_id).delete()
         Session.objects.filter(session_key__in=session_keys).delete()
         assert not ChatTurn.objects.filter(conversation__owner_id=access.user_id).exists()
-        print(json.dumps({"step": "cleanup", "temporary_records_removed": True}), flush=True)
+        print(
+            json.dumps({"step": "cleanup", "temporary_records_removed": True}),
+            flush=True,
+        )
 
 
 validate()

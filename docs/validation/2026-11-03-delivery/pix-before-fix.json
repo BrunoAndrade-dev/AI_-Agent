@@ -1,0 +1,24 @@
+[
+  {
+    "user_message": "Quais violões disponíveis até R$ 1000?",
+    "text": "Violão Exemplo Nylon (produto 1) — Disponível.\nStatus: ativo. Estoque registrado: 5.\nDe R$ 1000,00 por R$ 900,00 (10,00% de desconto sobre o preço de tabela).\nPIX: R$ 900,00. O desconto de PIX não acumula com a promoção.\nCaracterísticas: Cor: Natural; Cordas: nylon; Eletrônica: no",
+    "status": "ok",
+    "tools_used": [
+      "search_products"
+    ],
+    "validation_errors": []
+  },
+  {
+    "user_message": "E no PIX?",
+    "text": "Não consegui confirmar uma resposta nas fontes da loja. Pode reformular sua pergunta?",
+    "status": "unverified_response",
+    "tools_used": [
+      "search_products"
+    ],
+    "validation_errors": [
+      "unsupported_price",
+      "unsupported_price",
+      "unsupported_price"
+    ]
+  }
+]

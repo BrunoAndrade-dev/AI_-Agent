@@ -19,7 +19,7 @@ O modelo ainda exige revisão de qualidade; esses testes não o aprovam para pro
 O servidor Ollama 0.40.13 responde a `/api/version` e `/api/tags` na rede interna.
 A imagem está fixada por digest, com cloud desativado. Healthcheck não comprova
 presença do modelo. A API local de chat e sessão demonstrativa está implementada;
-veja [contratos HTTP](api.md). A suíte com a API possui 119 testes, além da
+veja [contratos HTTP](api.md). A suíte com a API possui 131 testes, além da
 [validação HTTP real](validation/2026-11-03-chat-api/report.md). A interface está
 implementada; o deploy público continua pendente.
 As consultas adicionais e a avaliação dos arquivos originais estão no
@@ -37,7 +37,10 @@ campo `format` do Ollama: nome/argumentos de uma ferramenta ou uma intenção si
 de saudação, esclarecimento ou fora de escopo. Essas intenções usam textos fixos,
 sem alegações operacionais. Não há fallback que simule uma consulta bem-sucedida.
 
-As categorias permitidas vêm do banco. `max_price` só admite números presentes
+As categorias permitidas vêm do banco, mas só podem filtrar quando o cliente
+menciona o tipo de instrumento. Uma consulta apenas por nome não permite inferir
+uma categoria restritiva, evitando classificar o Takamine GD20 como guitarra.
+`max_price` só admite números presentes
 nas mensagens do cliente, nunca valores inventados pelo assistente. Isso limita
 defaults alucinados, mas não prova que cada número representa um orçamento. Valores
 por extenso podem exigir esclarecimento. Schemas continuam validados pelo Python,
@@ -58,6 +61,16 @@ inclusive listas como "produtos 2 e 3", exigem consultas individuais. Perguntas
 mistas de status de pedido e devolução exigem ambas as fontes; uma consulta
 pendente volta ao planejador estruturado com a ferramenta necessária. Orçamento
 "até ... reais" por extenso pede confirmação numérica, sem presumir um valor.
+
+Perguntas explícitas de PIX com promoção exigem recuperar a regra de cumulatividade.
+A resposta final cita o trecho pertinente do manual; a tabela geral de pagamento
+isolada não basta para concluir essa condição. Isso protege a regra financeira
+observada no teste original, sem certificar todas as interpretações de políticas.
+
+O seguimento curto "E no PIX?" exige `get_product` quando há exatamente uma
+referência de produto conhecida. Com nenhuma ou várias referências, pede
+esclarecimento. A referência guarda apenas identidade: preço e estoque são
+consultados novamente, inclusive se mudaram desde a mensagem anterior.
 
 Sem evidência válida no turno, a prosa factual é rejeitada; chamadas com erro não
 contam como evidência. Há até quatro rodadas/oito chamadas, incluindo correções.

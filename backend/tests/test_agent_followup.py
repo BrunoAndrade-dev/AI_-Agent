@@ -5,9 +5,10 @@ from unittest.mock import Mock, patch
 
 from django.test import SimpleTestCase, TestCase
 
+from apps.catalog.models import Category, Product
 from apps.chat.agent import StoreAgent
 from apps.chat.ollama import InvalidModelResponse, OllamaClient
-from apps.chat.tools import TOOLS, AgentContext, explicit_product_ids
+from apps.chat.tools import TOOLS, AgentContext, available_tools, execute_tool, explicit_product_ids
 from apps.core.importing import import_bundle
 from apps.knowledge.models import PolicyChunk, PolicyDocument
 from tests.test_agent import call
@@ -40,6 +41,82 @@ class FollowupTests(TestCase):
     @classmethod
     def setUpTestData(cls):
         import_bundle(FIXTURES)
+
+    def test_named_product_does_not_allow_an_inferred_category_filter(self):
+        Category.objects.create(id=30, name="Guitarras", description="Categoria real")
+        definitions = available_tools(
+            messages=[
+                {"role": "user", "content": "Quanto custa o Takamine GD20? Ele está disponível?"}
+            ]
+        )
+        self.assertNotIn("category", definitions[0]["function"]["parameters"]["properties"])
+        result = execute_tool(
+            "search_products",
+            {"query": "Takamine GD20", "category": "Guitarras"},
+            AgentContext(),
+            definitions=definitions,
+        )
+        self.assertEqual(result, {"error": "invalid_arguments"})
+
+    def test_explicit_instrument_type_keeps_the_matching_category(self):
+        definitions = available_tools(messages=[{"role": "user", "content": "Quero um violão"}])
+        schema = definitions[0]["function"]["parameters"]["properties"]["category"]
+        self.assertEqual(schema["enum"], ["Violões"])
+
+    def test_pix_promotion_rule_overrides_incorrect_model_interpretation(self):
+        document = PolicyDocument.objects.create(
+            key="store-policies",
+            source_name="manual.pdf",
+            version="2.1",
+            sha256="d" * 64,
+            page_count=6,
+        )
+        PolicyChunk.objects.create(
+            document=document,
+            position=0,
+            page=6,
+            section="6.2 Regras de Promoções",
+            text=(
+                "Promoções não são cumulativas. "
+                "O desconto de PIX não se aplica sobre preços promocionais."
+            ),
+        )
+        client = Mock()
+        client.chat.side_effect = [
+            call("search_policies", {"query": "PIX promoções cumulatividade"}),
+            {"role": "assistant", "content": "PIX acumula mesmo em promoção."},
+        ]
+        reply = StoreAgent(client=client).reply(
+            "Qual é a regra do PIX quando o produto já está em promoção?"
+        )
+        self.assertEqual(reply.status, "ok")
+        self.assertIn("não se aplica", reply.text)
+        self.assertNotIn("PIX acumula", reply.text)
+        self.assertEqual(reply.sources[0]["page"], 6)
+        self.assertTrue(client.chat.call_args_list[0].kwargs["require_tool"])
+
+    def test_pix_payment_table_alone_does_not_ground_promotion_rule(self):
+        document = PolicyDocument.objects.create(
+            key="store-policies",
+            source_name="manual.pdf",
+            version="2.1",
+            sha256="e" * 64,
+            page_count=3,
+        )
+        PolicyChunk.objects.create(
+            document=document,
+            position=0,
+            page=3,
+            section="3. Pagamento",
+            text="PIX: 5% de desconto sobre preço de tabela.",
+        )
+        client = Mock()
+        client.chat.return_value = call(
+            "search_policies", {"query": "PIX promoções cumulatividade"}
+        )
+        reply = StoreAgent(client=client).reply("O desconto PIX acumula com promoção?")
+        self.assertNotEqual(reply.status, "ok")
+        self.assertNotIn("PIX acumula", reply.text)
 
     def test_prices_are_formatted_without_invented_channel_or_stacking(self):
         client = Mock()
@@ -93,6 +170,32 @@ class FollowupTests(TestCase):
         self.assertIn("orçamento", reply.text)
         self.assertIn("números", reply.text)
         client.chat.assert_not_called()
+
+    def test_pix_followup_requires_fresh_lookup_of_the_only_known_product(self):
+        Product.objects.filter(pk=1).update(price_brl="1200.00")
+        client = Mock()
+        client.chat.side_effect = [
+            call("get_product", {"product_id": 1}),
+            {"role": "assistant", "content": "PIX: R$ 1080,00."},
+        ]
+        agent = StoreAgent(client=client)
+        agent.product_references = {1: "Violão Exemplo Nylon"}
+        reply = agent.reply("E no PIX?")
+        self.assertEqual(reply.status, "ok")
+        self.assertIn("PIX: R$ 1080,00", reply.text)
+        self.assertEqual(reply.tools_used, ["get_product"])
+        first = client.chat.call_args_list[0]
+        self.assertTrue(first.kwargs["require_tool"])
+        self.assertEqual([t["function"]["name"] for t in first.args[1]], ["get_product"])
+
+    def test_pix_followup_does_not_guess_between_multiple_or_missing_references(self):
+        for references in ({}, {1: "Nylon", 5: "Concert"}):
+            client = Mock()
+            agent = StoreAgent(client=client)
+            agent.product_references = references
+            reply = agent.reply("E no PIX?")
+            self.assertIn("qual instrumento", reply.text)
+            client.chat.assert_not_called()
 
     def test_mixed_order_and_return_query_repairs_lookup_and_preserves_both_answers(self):
         document = PolicyDocument.objects.create(

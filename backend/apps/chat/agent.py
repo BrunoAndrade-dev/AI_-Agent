@@ -11,9 +11,11 @@ from apps.chat.grounding import grounding_error
 from apps.chat.ollama import InvalidModelResponse, ModelUnavailable, OllamaClient
 from apps.chat.prompts import REPAIR_PRICE, REQUIRE_TOOL, SYSTEM_PROMPT
 from apps.chat.responses import (
+    asks_about_pix_promotions,
     asks_about_returns,
     catalog_snapshot_reply,
     order_snapshot_reply,
+    pix_promotion_guidance,
     return_guidance,
     scoped_order_reply,
 )
@@ -54,6 +56,14 @@ class StoreAgent:
                 "Para respeitar seu orçamento, pode informar o valor em números, "
                 "por exemplo, R$ 1.000?"
             )
+        pix_followup = bool(
+            re.fullmatch(r"\s*(?:e\s+)?(?:no|pelo|via)\s+pix\s*[?!.]*\s*", text, re.I)
+        )
+        required_product_ids = explicit_product_ids(text)
+        if pix_followup:
+            if len(self.product_references) != 1:
+                return AgentReply("De qual instrumento você quer saber o preço no PIX?")
+            required_product_ids = set(self.product_references)
         history = self.history[-8:]
         while sum(len(item["content"]) for item in history) > 4000:
             history = history[2:]
@@ -89,19 +99,33 @@ class StoreAgent:
                     "missing_order_lookup": "get_order",
                     "missing_policy_evidence": "search_policies",
                 }.get(pending_lookup)
-                if required_tool == "get_product" and not (
-                    explicit_product_ids(text) - product_lookups
-                ):
+                if pix_followup and required_product_ids - product_lookups:
+                    required_tool = "get_product"
+                if asks_about_pix_promotions(text) and not pix_promotion_guidance(policy_passages):
+                    required_tool = "search_policies"
+                if required_tool == "get_product" and not (required_product_ids - product_lookups):
                     required_tool = None
                 if required_tool == "get_order" and not (required_orders - order_lookups):
                     required_tool = None
-                if required_tool == "search_policies" and policy_passages:
+                if (
+                    required_tool == "search_policies"
+                    and policy_passages
+                    and (
+                        not asks_about_pix_promotions(text)
+                        or pix_promotion_guidance(policy_passages)
+                    )
+                ):
                     required_tool = None
                 if required_tool:
                     tools = [item for item in tools if item["function"]["name"] == required_tool]
+                    if required_tool == "search_policies" and asks_about_pix_promotions(text):
+                        tools[0]["function"]["parameters"]["properties"]["query"] = {
+                            "type": "string",
+                            "enum": ["PIX promoções cumulatividade"],
+                        }
                     if required_tool == "get_product" and tools:
                         tools[0]["function"]["parameters"]["properties"]["product_id"]["enum"] = (
-                            sorted(explicit_product_ids(text) - product_lookups)
+                            sorted(required_product_ids - product_lookups)
                         )
                 try:
                     message = self.client.chat(
@@ -132,7 +156,7 @@ class StoreAgent:
                     messages[0]["content"] += "\n" + REQUIRE_TOOL
                     continue
                 if not calls:
-                    required_ids = explicit_product_ids(text)
+                    required_ids = required_product_ids
                     if results and required_ids - product_lookups:
                         validation_errors.append("missing_product_lookup")
                         messages[0]["content"] += (
@@ -167,6 +191,19 @@ class StoreAgent:
                         order_text = scoped_order_reply(orders) or order_snapshot_reply(orders)
                         answer = "\n\n".join(
                             part for part in (order_text, return_guidance(policy_passages)) if part
+                        )
+                    if asks_about_pix_promotions(text):
+                        policy_answer = pix_promotion_guidance(policy_passages)
+                        if not policy_answer:
+                            validation_errors.append("missing_pix_promotion_evidence")
+                            continue
+                        catalog = [
+                            item for item in results if "product" in item or "products" in item
+                        ]
+                        answer = "\n\n".join(
+                            part
+                            for part in (catalog_snapshot_reply(catalog), policy_answer)
+                            if part
                         )
                     error = (
                         "missing_policy_evidence"

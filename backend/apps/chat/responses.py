@@ -2,7 +2,26 @@
 
 import re
 
+from apps.catalog.services import normalize
 from apps.orders.models import Order
+
+
+def asks_about_pix_promotions(text: str) -> bool:
+    plain = normalize(text)
+    return "pix" in plain.split() and "promoc" in plain
+
+
+def pix_promotion_guidance(sources: list[dict]) -> str | None:
+    """Use the actual cumulative-discount policy rather than an LLM interpretation."""
+    relevant = [
+        source["text"]
+        for source in sources
+        if "pix" in normalize(source["text"]).split()
+        and re.search(r"cumul|promoc", normalize(source["text"]))
+    ]
+    if not relevant:
+        return None
+    return "Sobre PIX e promoções, o manual informa:\n\n" + "\n\n".join(relevant)
 
 
 def catalog_snapshot_reply(results: list[dict]) -> str | None:

@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from jsonschema import ValidationError, validate
 
 from apps.catalog.models import Category
-from apps.catalog.services import get_product, search_products
+from apps.catalog.services import CATEGORY_ALIASES, get_product, normalize, search_products
 from apps.chat.grounding import monetary_values
 from apps.knowledge.services import search_policies
 from apps.orders.services import get_order
@@ -125,6 +125,22 @@ def available_tools(
     if categories:
         category_schema["enum"] = categories
     if messages is not None:
+        latest_user = next(
+            (item["content"] for item in reversed(messages) if item["role"] == "user"), None
+        )
+        if latest_user is not None:
+            tokens = {
+                CATEGORY_ALIASES.get(token, token) for token in normalize(latest_user).split()
+            }
+            explicit = [
+                name
+                for name in categories
+                if (set(normalize(name).split()) - {"instrumentos", "de", "e", "da", "do"}) & tokens
+            ]
+            if explicit:
+                category_schema["enum"] = explicit
+            else:
+                del properties["category"]
         amounts = set()
         product_ids = set(product_references or {})
         for message in messages:

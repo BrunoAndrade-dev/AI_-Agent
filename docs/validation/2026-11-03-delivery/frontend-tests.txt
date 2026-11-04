@@ -1,0 +1,21 @@
+
+> emporio-da-musica-frontend@0.1.0 test
+> node --test tests/*.test.mjs
+
+(node:209752) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/andrade/Documentos/projetos/AI_-Agent/frontend/src/lib/api.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /home/andrade/Documentos/projetos/AI_-Agent/frontend/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ login uses cookies and replaces CSRF after authentication (319.420315ms)
+✔ CSRF rejection refreshes the token once without changing the message UUID (2.285996ms)
+✔ persisted 503 replies are returned as turns; infrastructure errors remain errors (2.393585ms)
+✔ network failures do not automatically resend a potentially accepted message (1.991721ms)
+✔ rate-limit delay is exposed for a controlled retry (0.617691ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 681.76113

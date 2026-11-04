@@ -37,6 +37,8 @@ services:
       POSTGRES_HOST: db
       POSTGRES_PORT: 5432
       OLLAMA_BASE_URL: http://ollama:11434
+      DJANGO_CORS_ALLOWED_ORIGINS: "${DJANGO_CORS_ALLOWED_ORIGINS:-http://localhost:3000},http://localhost:3001"
+      DJANGO_CSRF_TRUSTED_ORIGINS: "${DJANGO_CSRF_TRUSTED_ORIGINS:-${DJANGO_CORS_ALLOWED_ORIGINS:-http://localhost:3000}},http://localhost:3001"
     volumes:
       - ./backend:/app
       - ./data/private:/data/private:ro

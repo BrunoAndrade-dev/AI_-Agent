@@ -1,0 +1,10 @@
+{
+  "backend/apps/chat/agent.py": "bb54dca372b6f8ba169b78601c51fb915132e630591adecc6688c22f8850f67a",
+  "backend/apps/chat/ollama.py": "73bb107ceb2ff6533cc142e905f67665af7b50e998bfd6b38a299aa647598e0c",
+  "backend/apps/chat/tools.py": "2e6945f1a33eebaa29798adba576ff9e919e8d8fbf9c78fa37e2aae4622a163f",
+  "backend/apps/chat/responses.py": "992d3d04d59001dffcf824d21cc9ab3f71f70cf7510f604260925b1b6b127083",
+  "backend/tests/test_agent_followup.py": "f5737557253053eae40f87084d074b9932a36d8e5132f253dc68d4458980dd66",
+  "frontend/src/app/globals.css": "82e3edbfcde88625600c7909e3fb9402e2e1af83799809b37ceb8a1119fcba7e",
+  "scripts/measure_agent_latency.py": "4a1fffcbdcba65d8ee34092ed3286efed5c1e4e1d38e842e693f117a6a48692d",
+  "scripts/export_demo_conversations.py": "7076610df445356d2cdff5b537823eccbee511aab48fab1ac00f5445f07ed5ca"
+}

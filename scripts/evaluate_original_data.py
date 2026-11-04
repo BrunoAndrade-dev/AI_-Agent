@@ -54,9 +54,7 @@ try:
             flush=True,
         )
     promoted = (
-        Product.objects.filter(
-            status="active", stock_quantity__gt=0, promotions__is_active=True
-        )
+        Product.objects.filter(status="active", stock_quantity__gt=0, promotions__is_active=True)
         .order_by("id")
         .first()
     )
@@ -112,9 +110,7 @@ try:
         if selected and scenario not in selected.split(","):
             continue
         started = time.monotonic()
-        agent = StoreAgent(
-            context=AgentContext(customer_id=customer_id), client=OllamaClient()
-        )
+        agent = StoreAgent(context=AgentContext(customer_id=customer_id), client=OllamaClient())
         reply = agent.reply(prompt)
         print(
             json.dumps(

@@ -5,6 +5,15 @@ backend e no Swagger para manter o mesmo host dos cookies. O navegador usa
 `NEXT_PUBLIC_API_BASE_URL` (padrão `http://localhost:8000/api`). Essa variável é
 pública e não deve conter credenciais.
 
+O Compose também permite `http://localhost:3001` para desenvolvimento local,
+incluindo cookies e CSRF. O Next.js pode escolher essa porta quando 3000 já está
+ocupada pelo frontend Docker. O backend permanece em `http://localhost:8000/api`.
+Outras origens continuam exigindo configuração explícita.
+
+Para os produtos e políticas do desafio, use o [modo original](original-demo.md).
+Ele aponta a mesma API para um banco separado e usa cookie próprio; ao alternar,
+recarregue a página e entre com um código emitido na base correspondente.
+
 ## Execução
 
 Com o ambiente já configurado, execute `docker compose up -d --build frontend`.
@@ -24,6 +33,22 @@ sessionStorage ou configuração pública. A sessão usa cookies e CSRF; o clien
 não escolhe sua identidade por parâmetro HTTP. Ao recarregar, o frontend recupera
 a sessão e a conversa mais recente. Encerrar e entrar novamente cria outro escopo
 de acesso ao histórico, conforme o contrato do backend.
+
+## Preparar uma demonstração
+
+Antes de apresentar, confira os serviços e envie uma saudação pelo CLI para
+carregar o modelo:
+
+```sh
+docker compose exec backend python manage.py chat_store --message "Olá"
+```
+
+`--check-model` verifica a instalação, mas não substitui o carregamento. O
+adaptador solicita retenção de cinco minutos entre chamadas; depois de um período
+ocioso, pode ocorrer novo carregamento. A medição registrada em
+`docs/validation/2026-11-03-delivery/latency.jsonl` levou 136,99 s a frio e
+38,49/37,54 s nas repetições. Aquecer não garante respostas rápidas nem impede
+timeout. Evite gerar consultas de avaliação simultaneamente à apresentação.
 
 ## Comportamento
 

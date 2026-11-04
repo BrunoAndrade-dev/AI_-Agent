@@ -8,6 +8,16 @@ from django.db.models import Prefetch
 
 from apps.catalog.models import Product, Promotion
 
+CATEGORY_ALIASES = {
+    "violao": "violoes",
+    "ukulele": "ukuleles",
+    "guitarra": "guitarras",
+    "baixo": "baixos",
+    "bateria": "baterias",
+    "teclado": "teclados",
+    "piano": "pianos",
+}
+
 
 def normalize(text: str) -> str:
     """Normalize accents and punctuation for small-catalog token matching."""
@@ -76,14 +86,8 @@ def search_products(
     if available_only:
         products = products.filter(status=Product.Status.ACTIVE, stock_quantity__gt=0)
     tokens = normalize(query).split()
-    aliases = {
-        "violao": "violoes",
-        "ukulele": "ukuleles",
-        "guitarra": "guitarras",
-        "baixo": "baixos",
-    }
     wanted_category = normalize(category)
-    wanted_category = aliases.get(wanted_category, wanted_category)
+    wanted_category = CATEGORY_ALIASES.get(wanted_category, wanted_category)
     matches = []
     for product in products:
         haystack = normalize(f"{product.name} {product.category.name} {product.description}")
@@ -91,7 +95,8 @@ def search_products(
         if wanted_category and wanted_category not in category_name:
             continue
         if not all(
-            token in haystack or aliases.get(token, token) in category_name for token in tokens
+            token in haystack or CATEGORY_ALIASES.get(token, token) in category_name
+            for token in tokens
         ):
             continue
         payload = product_payload(product)
