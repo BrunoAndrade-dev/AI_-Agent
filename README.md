@@ -1,7 +1,6 @@
 # Empório da Música
 
-Protótipo de agente de atendimento por texto para a loja fictícia Empório da Música,
-desenvolvido para o desafio técnico de AI Engineer da Artefact. O objetivo é
+Protótipo de agente de atendimento por texto para a loja fictícia Empório da Música. O objetivo é
 consultar produtos, preços, disponibilidade, pedidos e políticas com informações
 das fontes fornecidas, mantendo o contexto da conversa e os limites do atendimento.
 
