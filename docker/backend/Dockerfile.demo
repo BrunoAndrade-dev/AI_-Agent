@@ -1,0 +1,5 @@
+FROM emporio-musica-backend:local
+USER root
+RUN pip install --no-cache-dir gunicorn==26.2.0 packaging==26.2
+USER app
+CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "1", "--threads", "4", "--timeout", "240", "--forwarded-allow-ips", "*"]

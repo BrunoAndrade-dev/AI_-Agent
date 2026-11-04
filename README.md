@@ -10,7 +10,8 @@ interface Next.js. A demonstração pode usar o material original do desafio ou
 fixtures sintéticas públicas, em **bancos separados**. Não há treinamento ou
 fine-tuning: o modelo consulta informações por ferramentas executadas pelo backend.
 
-**Estado atual:** protótipo local com avaliações reais e testes automatizados.
+**Estado atual:** protótipo com execução local, avaliações reais, testes automatizados
+e frontend publicado na Vercel com uma base sintética exclusiva para a demonstração.
 O modelo ainda apresenta limitações de interpretação e latência. A consulta de
 violões até R$ 1.000 tem uma falha relatada nos testes manuais mais recentes e
 continua pendente de investigação. Os exemplos selecionados não representam
@@ -18,6 +19,7 @@ aprovação geral do agente para qualquer pergunta.
 
 ## Guia de leitura
 
+- [Demonstração na Vercel e operação do túnel](docs/deploy-vercel.md)
 - [Executar um ambiente já preparado](#executar-um-ambiente-já-preparado)
 - [Instalação completa](#instalação-completa)
 - [Escolher e preparar os dados](#escolher-e-preparar-os-dados)
